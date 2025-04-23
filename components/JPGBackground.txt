@@ -1,0 +1,24 @@
+import React from 'react';
+import { StyleSheet, Dimensions, ImageBackground } from 'react-native';
+
+// Get screen dimensions
+const { width, height } = Dimensions.get('window');
+
+export default function BackgroundImage() {
+  return (
+    <ImageBackground 
+      source={require('../assets/images/backgrounds/your_image.jpg')}
+      style={styles.backgroundContainer}
+      resizeMode="cover"
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  backgroundContainer: {
+    position: 'absolute',
+    width: width,
+    height: height,
+    zIndex: -1,
+  },
+}); 

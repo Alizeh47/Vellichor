@@ -1,0 +1,223 @@
+import React, { useState } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { router } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { AntDesign } from '@expo/vector-icons';
+import BackgroundImage from '../components/BackgroundImage';
+import Colors from '../constants/Colors';
+
+export default function SignupScreen() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fontsLoaded] = useFonts({
+    'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  const handleSignup = () => {
+    // Here you would add sign up logic
+    console.log('Sign up with:', name, email, password);
+    router.push('/(tabs)');
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <BackgroundImage />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+      >
+        <View style={styles.contentContainer}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+          >
+            <AntDesign name="arrowleft" size={24} color="#393D6B" />
+          </TouchableOpacity>
+
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Start reading your favorite books today!</Text>
+          </View>
+          
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your full name"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+            
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Create a password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            
+            <Text style={styles.termsText}>
+              By signing up, you agree to our Terms of Service and Privacy Policy
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.signupButton}
+              onPress={handleSignup}
+            >
+              <Text style={styles.signupButtonText}>Create Account</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => router.push('/login')}>
+                <Text style={styles.loginLink}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    position: 'relative',
+    paddingBottom: 20,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingHorizontal: 30,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  backButton: {
+    marginBottom: 20,
+  },
+  titleContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontFamily: 'SpaceMono',
+    fontStyle: 'italic',
+    color: '#333333',
+    textAlign: 'center',
+    maxWidth: '90%',
+    textShadowColor: 'rgba(255, 255, 255, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  formContainer: {
+    width: '100%',
+  },
+  label: {
+    fontSize: 16,
+    fontFamily: 'SpaceMono',
+    color: '#333333',
+    marginBottom: 8,
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
+  },
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+    fontFamily: 'SpaceMono',
+  },
+  termsText: {
+    color: '#333333',
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 20,
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
+  },
+  signupButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 16,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  signupButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontFamily: 'SpaceMono',
+    fontWeight: '600',
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  loginText: {
+    color: '#333333',
+    fontFamily: 'SpaceMono',
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
+  },
+  loginLink: {
+    color: Colors.primary,
+    fontFamily: 'SpaceMono',
+    fontWeight: '600',
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
+  },
+}); 
