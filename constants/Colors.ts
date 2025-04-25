@@ -8,7 +8,7 @@ const tintColorDark = '#fff';
 
 const Colors = {
   primary: '#393D6B',
-  secondary: '#FFA233',
+  secondary: '#A67C52',
   background: '#FFFCF7',
   text: '#333333',
   textSecondary: '#666666',

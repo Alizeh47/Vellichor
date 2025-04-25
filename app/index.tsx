@@ -11,6 +11,7 @@ SplashScreen.preventAutoHideAsync();
 export default function WelcomeScreen() {
   const [fontsLoaded] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'Birthstone': require('../assets/fonts/Birthstone-Regular.ttf'),
   });
 
   // Animation values
@@ -39,7 +40,7 @@ export default function WelcomeScreen() {
   }, [fontsLoaded, fadeAnim, scaleAnim]);
 
   const handleStartPress = () => {
-    router.push('/(tabs)');
+    router.push('/genres');
   };
 
   const handleLoginPress = () => {
@@ -71,7 +72,7 @@ export default function WelcomeScreen() {
           {/* Main content */}
           <Text style={styles.title}>
             All your books in one place on{' '}
-            <Text style={styles.highlightedText}>Vellichor.</Text>
+            <Text style={styles.vellichorText}>Vellichor.</Text>
           </Text>
 
           <TouchableOpacity 
@@ -119,6 +120,15 @@ const styles = StyleSheet.create({
     lineHeight: 52,
     width: '100%',
     textAlign: 'center',
+    textShadowColor: 'rgba(255, 255, 255, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  vellichorText: {
+    fontFamily: 'Birthstone',
+    fontSize: 92,
+    fontStyle: 'italic',
+    color: '#0D1D3C',
     textShadowColor: 'rgba(255, 255, 255, 0.7)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
