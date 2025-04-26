@@ -35,6 +35,7 @@ export default function RootLayout() {
         <Stack.Screen name="tropes" options={{ headerShown: false }} />
         <Stack.Screen name="about" options={{ headerShown: false }} />
         <Stack.Screen name="reading" options={{ headerShown: false }} />
+        <Stack.Screen name="book-reader" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>

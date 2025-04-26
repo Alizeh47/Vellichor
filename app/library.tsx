@@ -18,6 +18,7 @@ import { Ionicons, FontAwesome, MaterialCommunityIcons, Feather, AntDesign } fro
 import * as SplashScreen from 'expo-splash-screen';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '../constants/Colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 SplashScreen.preventAutoHideAsync();
 const { width, height } = Dimensions.get('window');
@@ -36,6 +37,17 @@ type ReadingList = {
   name: string;
   stories: Story[];
   coverImage?: string;
+};
+
+// Type for bookmarked books
+type BookmarkedBook = {
+  id: string;
+  title: string;
+  author: string;
+  coverImagePath: string;
+  currentPage: number;
+  totalPages: number;
+  lastReadTimestamp: string;
 };
 
 // Sample data
@@ -91,6 +103,56 @@ export default function LibraryScreen() {
   // Header parallax effect
   const scrollY = useRef(new Animated.Value(0)).current;
   
+  const [bookmarkedBooks, setBookmarkedBooks] = useState<BookmarkedBook[]>([]);
+  const bookmarkedBookAnims = useRef<Animated.Value[]>([]).current;
+
+  // Load bookmarked books from AsyncStorage
+  useEffect(() => {
+    loadBookmarkedBooks();
+  }, []);
+
+  const loadBookmarkedBooks = async () => {
+    try {
+      const bookmarkedBooksJson = await AsyncStorage.getItem('bookmarkedBooks');
+      if (bookmarkedBooksJson) {
+        const books = JSON.parse(bookmarkedBooksJson);
+        setBookmarkedBooks(books);
+        
+        // Create animations for each book
+        while (bookmarkedBookAnims.length < books.length) {
+          bookmarkedBookAnims.push(new Animated.Value(0));
+        }
+        
+        // Animate each book with stagger
+        Animated.stagger(
+          150,
+          books.map((_: BookmarkedBook, i: number) =>
+            Animated.timing(bookmarkedBookAnims[i], {
+              toValue: 1,
+              duration: 500,
+              delay: 300,
+              useNativeDriver: true,
+            })
+          )
+        ).start();
+      }
+    } catch (error) {
+      console.error('Error loading bookmarked books:', error);
+    }
+  };
+
+  const openBookReader = (book: BookmarkedBook) => {
+    router.push({
+      pathname: '/book-reader',
+      params: {
+        bookTitle: book.title,
+        bookAuthor: book.author,
+        currentPage: book.currentPage.toString(),
+        totalPages: book.totalPages.toString()
+      }
+    });
+  };
+
   useEffect(() => {
     // Move tab indicator based on active tab
     let position = 0;
@@ -301,6 +363,79 @@ export default function LibraryScreen() {
     </Animated.View>
   );
 
+  // Render bookmarked book item
+  const renderBookmarkedBookItem = ({ item, index }: { item: BookmarkedBook; index: number }) => {
+    // Check if animation is available
+    const animValue = index < bookmarkedBookAnims.length 
+      ? bookmarkedBookAnims[index] 
+      : new Animated.Value(1);
+
+    // Get the book cover image based on title (using a path-to-require mapping)
+    const getBookCoverImage = (path: string) => {
+      if (path.includes('mystery_book1')) {
+        return require('../assets/images/book-covers/mystery_book1.jpg');
+      } else if (path.includes('fantasy_book1')) {
+        return require('../assets/images/book-covers/fantasy_book1.jpg');
+      } else if (path.includes('fantasy_book2')) {
+        return require('../assets/images/book-covers/fantasy_book2.jpg');
+      } else if (path.includes('crime_book1')) {
+        return require('../assets/images/book-covers/crime_book1.jpg');
+      } else if (path.includes('short_story')) {
+        return require('../assets/images/book-covers/short_story_book1.jpg');
+      } else if (path.includes('romance')) {
+        return require('../assets/images/book-covers/romance_book1.jpg');
+      } else if (path.includes('history')) {
+        return require('../assets/images/book-covers/history_book1.jpg');
+      } else if (path.includes('scifi')) {
+        return require('../assets/images/book-covers/scifi_book1.jpg');
+      } else {
+        return require('../assets/images/book-covers/fantasy_book1.jpg');
+      }
+    };
+
+    return (
+      <Animated.View
+        style={[
+          styles.storyCard,
+          {
+            opacity: animValue,
+            transform: [
+              {
+                translateY: animValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [40, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          onPress={() => openBookReader(item)}
+        >
+          <Image 
+            source={getBookCoverImage(item.coverImagePath)} 
+            style={styles.storyCover} 
+          />
+          <View style={styles.bookProgress}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { width: `${(item.currentPage / item.totalPages) * 100}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>
+              {Math.round((item.currentPage / item.totalPages) * 100)}%
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   if (!fontsLoaded) {
     return null;
   }
@@ -428,6 +563,38 @@ export default function LibraryScreen() {
             <View style={styles.currentReadsContainer}>
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>My Library</Text>
+                  <Text style={styles.sectionCount}>{bookmarkedBooks.length} Books</Text>
+                </View>
+                
+                {bookmarkedBooks.length > 0 ? (
+                  <FlatList
+                    data={bookmarkedBooks}
+                    renderItem={renderBookmarkedBookItem}
+                    keyExtractor={item => item.id}
+                    horizontal={false}
+                    scrollEnabled={false}
+                    numColumns={3}
+                    contentContainerStyle={styles.storiesGrid}
+                  />
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Image
+                      source={require('../assets/images/book-covers/fantasy_book1.jpg')}
+                      style={styles.emptyStateImage}
+                    />
+                    <Text style={styles.emptyStateTitle}>
+                      Your library is empty
+                    </Text>
+                    <Text style={styles.emptyStateDescription}>
+                      Bookmark books while reading to add them to your library
+                    </Text>
+                  </View>
+                )}
+              </View>
+              
+              <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Available Offline</Text>
                   <Text style={styles.sectionCount}>0 Stories</Text>
                 </View>
@@ -446,7 +613,7 @@ export default function LibraryScreen() {
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Wattpad Originals</Text>
-                  <Text style={styles.sectionCount}>1 Story</Text>
+                  <Text style={styles.sectionCount}>{wattpadOriginals.length} Story</Text>
                 </View>
                 
                 <FlatList
@@ -667,6 +834,13 @@ const styles = StyleSheet.create({
     color: '#5C3D2F',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  emptyStateDescription: {
+    fontFamily: 'SpaceMono',
+    fontSize: 14,
+    color: '#5C3D2F',
+    textAlign: 'center',
+    marginTop: 10,
   },
   storiesGrid: {
     paddingHorizontal: 16,
@@ -892,5 +1066,34 @@ const styles = StyleSheet.create({
     color: '#4a4e82',
     fontWeight: 'bold',
     marginTop: 4,
+  },
+  bookProgress: {
+    position: 'absolute',
+    bottom: 5,
+    left: 5,
+    right: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#444',
+    borderRadius: 2,
+    marginRight: 5,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#A67C52',
+    borderRadius: 2,
+  },
+  progressText: {
+    fontFamily: 'SpaceMono',
+    fontSize: 8,
+    color: '#fff',
   },
 }); 

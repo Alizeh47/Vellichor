@@ -11,7 +11,10 @@ import {
   FlatList,
   Animated,
   TextInput,
-  Modal
+  Modal,
+  ToastAndroid,
+  Platform,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -29,7 +32,7 @@ type Book = {
   id: string;
   title: string;
   author: string;
-  coverImage: string;
+  coverImage: string | any; // Allow both string URLs and require() image sources
   description: string;
 };
 
@@ -39,84 +42,84 @@ const booksToRead: Book[] = [
     id: '1',
     title: 'The Here And Now',
     author: 'Jillian Lawrence',
-    coverImage: 'https://via.placeholder.com/150x200/FF3B30/FFFFFF?text=The+Here+And+Now',
+    coverImage: require('../assets/images/book-covers/fantasy_book1.jpg'),
     description: 'A thought-provoking journey through time and space, exploring the concept of living in the present moment while reconciling with the past.'
   },
   {
     id: '1a',
     title: 'Silent Echo',
     author: 'Maya Rivers',
-    coverImage: 'https://via.placeholder.com/150x200/FF5E3A/FFFFFF?text=Silent+Echo',
+    coverImage: require('../assets/images/book-covers/fantasy_book2.jpg'),
     description: 'When a mysterious sound phenomenon appears in a small coastal town, a young scientist must uncover its secrets before it consumes everything.'
   },
   {
     id: '1b',
     title: 'Midnight Dreams',
     author: 'Thomas Night',
-    coverImage: 'https://via.placeholder.com/150x200/FF2D55/FFFFFF?text=Midnight+Dreams',
+    coverImage: require('../assets/images/book-covers/fantasy_book3.jpg'),
     description: 'A thrilling tale of a young woman who discovers a hidden world of dreams and nightmares.'
   },
   {
     id: '1c',
     title: 'The Lost Letter',
     author: 'Sarah Winters',
-    coverImage: 'https://via.placeholder.com/150x200/FF9500/FFFFFF?text=The+Lost+Letter',
+    coverImage: require('../assets/images/book-covers/romance_book1.jpg'),
     description: 'A heartwarming story about a letter that brings hope to a lonely old man.'
   },
   {
     id: '1d',
     title: 'Whispers in Shadow',
     author: 'Jackson Gray',
-    coverImage: 'https://via.placeholder.com/150x200/E73A2D/FFFFFF?text=Whispers+in+Shadow',
+    coverImage: require('../assets/images/book-covers/thriller_book1.jpg'),
     description: 'A chilling tale of a small town haunted by mysterious whispers.'
   },
   {
     id: '1e',
     title: 'Forgotten Time',
     author: 'Olivia Pierce',
-    coverImage: 'https://via.placeholder.com/150x200/FFCC00/000000?text=Forgotten+Time',
+    coverImage: require('../assets/images/book-covers/scifi_book1.jpg'),
     description: 'A poignant story about a woman who discovers a hidden time machine.'
   },
   {
     id: '1f',
     title: 'Broken Memories',
     author: 'Nathan Blake',
-    coverImage: 'https://via.placeholder.com/150x200/FF8000/FFFFFF?text=Broken+Memories',
+    coverImage: require('../assets/images/book-covers/mystery_book1.jpg'),
     description: 'A powerful tale of love and loss, set in a world where memories are fragile and easily broken.'
   },
   {
     id: '1g',
     title: 'Summer\'s End',
     author: 'Lily Moore',
-    coverImage: 'https://via.placeholder.com/150x200/FF4500/FFFFFF?text=Summer%27s+End',
+    coverImage: require('../assets/images/book-covers/contemporary_romance_book1.jpg'),
     description: 'A bittersweet story about the end of summer and the beginning of a new chapter.'
   },
   {
     id: '1h',
     title: 'Hidden Truths',
     author: 'Maxwell King',
-    coverImage: 'https://via.placeholder.com/150x200/FF6347/FFFFFF?text=Hidden+Truths',
+    coverImage: require('../assets/images/book-covers/mystery_book2.jpg'),
     description: 'A thrilling mystery that explores the dark secrets of a small town.'
   },
   {
     id: '1i',
     title: 'Eternal Twilight',
     author: 'Isabella Dawn',
-    coverImage: 'https://via.placeholder.com/150x200/FF7F50/FFFFFF?text=Eternal+Twilight',
+    coverImage: require('../assets/images/book-covers/paranormal_romance_book1.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of vampires.'
   },
   {
     id: '1j',
     title: 'Autumn Leaves',
     author: 'Daniel Harper',
-    coverImage: 'https://via.placeholder.com/150x200/FFA07A/FFFFFF?text=Autumn+Leaves',
+    coverImage: require('../assets/images/book-covers/romance_book2.jpg'),
     description: 'A poignant story about the changing seasons and the passing of time.'
   },
   {
     id: '1k',
     title: 'Distant Shores',
     author: 'Marina Coast',
-    coverImage: 'https://via.placeholder.com/150x200/FF8C69/FFFFFF?text=Distant+Shores',
+    coverImage: require('../assets/images/book-covers/adventure_book2.jpg'),
     description: 'A heartwarming tale about a young woman who discovers a hidden island.'
   },
 ];
@@ -126,84 +129,84 @@ const crimeMysteryBooks: Book[] = [
     id: '2',
     title: 'The Stranger In The Lake',
     author: 'Sloane Collins',
-    coverImage: 'https://via.placeholder.com/150x200/F5CD79/333333?text=The+Stranger+In+The+Lake',
+    coverImage: require('../assets/images/book-covers/crime_book1.jpg'),
     description: 'A chilling tale of a body discovered in a peaceful mountain lake, and the dark secrets that emerge as a small town detective digs deeper.'
   },
   {
     id: '2a',
     title: 'Cold Cases',
     author: 'Detective Morgan',
-    coverImage: 'https://via.placeholder.com/150x200/F7DC6F/333333?text=Cold+Cases',
+    coverImage: require('../assets/images/book-covers/crime_book2.jpg'),
     description: 'A collection of cold cases that challenge a detective to solve mysteries from the past.'
   },
   {
     id: '2b',
     title: 'Vanishing Point',
     author: 'Jessica Thorne',
-    coverImage: 'https://via.placeholder.com/150x200/E6B0AA/333333?text=Vanishing+Point',
+    coverImage: require('../assets/images/book-covers/crime_book3.jpg'),
     description: 'A thrilling mystery about a woman who disappears without a trace.'
   },
   {
     id: '2c',
     title: 'The Final Witness',
     author: 'Alexander Knight',
-    coverImage: 'https://via.placeholder.com/150x200/D4AC0D/FFFFFF?text=The+Final+Witness',
+    coverImage: require('../assets/images/book-covers/mystery_book3.jpg'),
     description: 'A gripping tale of a murder case that hinges on the testimony of a single witness.'
   },
   {
     id: '2d',
     title: 'Shattered Evidence',
     author: 'Catherine Miles',
-    coverImage: 'https://via.placeholder.com/150x200/F39C12/FFFFFF?text=Shattered+Evidence',
+    coverImage: require('../assets/images/book-covers/thriller_book3.jpg'),
     description: 'A thrilling mystery that explores the consequences of a single piece of evidence.'
   },
   {
     id: '2e',
     title: 'Silent Confessions',
     author: 'Michael Stone',
-    coverImage: 'https://via.placeholder.com/150x200/D68910/FFFFFF?text=Silent+Confessions',
+    coverImage: require('../assets/images/book-covers/horror_book1.jpg'),
     description: 'A chilling tale of a murder investigation that reveals dark secrets.'
   },
   {
     id: '2f',
     title: 'The Broken Alibi',
     author: 'Rebecca Holmes',
-    coverImage: 'https://via.placeholder.com/150x200/E9B461/333333?text=The+Broken+Alibi',
+    coverImage: require('../assets/images/book-covers/mystery_book1.jpg'),
     description: 'A gripping tale of a murder case that challenges the integrity of a police officer.'
   },
   {
     id: '2g',
     title: 'Murder at Midnight',
     author: 'James Noir',
-    coverImage: 'https://via.placeholder.com/150x200/F1C40F/333333?text=Murder+at+Midnight',
+    coverImage: require('../assets/images/book-covers/thriller_book1.jpg'),
     description: 'A thrilling tale of a murder that occurs at midnight.'
   },
   {
     id: '2h',
     title: 'The Detective\'s Dilemma',
     author: 'Sophia Case',
-    coverImage: 'https://via.placeholder.com/150x200/FAD7A0/333333?text=The+Detective%27s+Dilemma',
+    coverImage: require('../assets/images/book-covers/mystery_book2.jpg'),
     description: 'A gripping tale of a detective who must choose between her duty and her personal life.'
   },
   {
     id: '2i',
     title: 'Crimson Evidence',
     author: 'Victor Marks',
-    coverImage: 'https://via.placeholder.com/150x200/F4D03F/333333?text=Crimson+Evidence',
+    coverImage: require('../assets/images/book-covers/horror_book2.jpg'),
     description: 'A thrilling mystery that explores the consequences of a single piece of evidence.'
   },
   {
     id: '2j',
     title: 'The Perfect Crime',
     author: 'Eleanor Walsh',
-    coverImage: 'https://via.placeholder.com/150x200/F9E79F/333333?text=The+Perfect+Crime',
+    coverImage: require('../assets/images/book-covers/horror_book3.jpg'),
     description: 'A gripping tale of a perfect murder that leaves no trace.'
   },
   {
     id: '2k',
     title: 'Missing Witnesses',
     author: 'Thomas Sleuth',
-    coverImage: 'https://via.placeholder.com/150x200/F8C471/333333?text=Missing+Witnesses',
+    coverImage: require('../assets/images/book-covers/mystery_book3.jpg'),
     description: 'A thrilling mystery about a missing witness in a murder trial.'
   },
 ];
@@ -213,84 +216,84 @@ const shortStoryBooks: Book[] = [
     id: '3',
     title: 'Abyss retreat',
     author: 'Jane Doe',
-    coverImage: 'https://via.placeholder.com/150x200/1D7CAA/FFFFFF?text=Abyss+retreat',
+    coverImage: require('../assets/images/book-covers/short_story_book1.jpg'),
     description: 'A collection of interconnected short stories exploring the depths of human emotion and the retreat into inner worlds during times of crisis.'
   },
   {
     id: '3a',
     title: 'Fragments',
     author: 'Emily Clarke',
-    coverImage: 'https://via.placeholder.com/150x200/2874A6/FFFFFF?text=Fragments',
+    coverImage: require('../assets/images/book-covers/short_story_book2.jpg'),
     description: 'A collection of short stories that explore the concept of fragments and how they shape our lives.'
   },
   {
     id: '3b',
     title: 'Whispers & Tales',
     author: 'Lily White',
-    coverImage: 'https://via.placeholder.com/150x200/1A5276/FFFFFF?text=Whispers+%26+Tales',
+    coverImage: require('../assets/images/book-covers/short_story_book3.jpg'),
     description: 'A collection of short stories that explore the concept of whispers and how they connect people.'
   },
   {
     id: '3c',
     title: 'Passing Moments',
     author: 'Richard Hall',
-    coverImage: 'https://via.placeholder.com/150x200/21618C/FFFFFF?text=Passing+Moments',
+    coverImage: require('../assets/images/book-covers/poetry_book1.jpg'),
     description: 'A collection of short stories that explore the concept of passing moments and how they shape our memories.'
   },
   {
     id: '3d',
     title: 'Reflections',
     author: 'Claire Waters',
-    coverImage: 'https://via.placeholder.com/150x200/2E86C1/FFFFFF?text=Reflections',
+    coverImage: require('../assets/images/book-covers/poetry_book2.jpg'),
     description: 'A collection of short stories that explore the concept of reflections and how they shape our perceptions.'
   },
   {
     id: '3e',
     title: 'Tiny Dreams',
     author: 'Martin Green',
-    coverImage: 'https://via.placeholder.com/150x200/5DADE2/000000?text=Tiny+Dreams',
+    coverImage: require('../assets/images/book-covers/poetry_book3.jpg'),
     description: 'A collection of short stories that explore the concept of tiny dreams and how they shape our reality.'
   },
   {
     id: '3f',
     title: 'Fleeting Moments',
     author: 'Emma Frost',
-    coverImage: 'https://via.placeholder.com/150x200/3498DB/FFFFFF?text=Fleeting+Moments',
+    coverImage: require('../assets/images/book-covers/short_story_book1.jpg'),
     description: 'A collection of short stories that explore the concept of fleeting moments and how they shape our lives.'
   },
   {
     id: '3g',
     title: 'Brief Encounters',
     author: 'David Swift',
-    coverImage: 'https://via.placeholder.com/150x200/2980B9/FFFFFF?text=Brief+Encounters',
+    coverImage: require('../assets/images/book-covers/short_story_book2.jpg'),
     description: 'A collection of short stories that explore the concept of brief encounters and how they shape our memories.'
   },
   {
     id: '3h',
     title: 'Minutes to Midnight',
     author: 'Olivia Short',
-    coverImage: 'https://via.placeholder.com/150x200/2471A3/FFFFFF?text=Minutes+to+Midnight',
+    coverImage: require('../assets/images/book-covers/short_story_book3.jpg'),
     description: 'A collection of short stories that explore the concept of minutes to midnight and how they shape our lives.'
   },
   {
     id: '3i',
     title: 'Tiny Victories',
     author: 'Peter Small',
-    coverImage: 'https://via.placeholder.com/150x200/4A90E2/000000?text=Tiny+Victories',
+    coverImage: require('../assets/images/book-covers/poetry_book1.jpg'),
     description: 'A collection of short stories that explore the concept of tiny victories and how they shape our reality.'
   },
   {
     id: '3j',
     title: 'Flash Fiction',
     author: 'Sophie Quick',
-    coverImage: 'https://via.placeholder.com/150x200/5499C7/FFFFFF?text=Flash+Fiction',
+    coverImage: require('../assets/images/book-covers/poetry_book2.jpg'),
     description: 'A collection of flash fiction stories that explore the concept of flash fiction and how it shapes our reality.'
   },
   {
     id: '3k',
     title: 'Micro Tales',
     author: 'Philip Tiny',
-    coverImage: 'https://via.placeholder.com/150x200/7FB3D5/000000?text=Micro+Tales',
+    coverImage: require('../assets/images/book-covers/poetry_book3.jpg'),
     description: 'A collection of micro tales that explore the concept of micro tales and how they shape our reality.'
   },
 ];
@@ -300,84 +303,84 @@ const fantasyBooks: Book[] = [
     id: '4',
     title: 'Kingdom of Mist',
     author: 'Eleanor Gray',
-    coverImage: 'https://via.placeholder.com/150x200/9B59B6/FFFFFF?text=Kingdom+of+Mist',
+    coverImage: require('../assets/images/book-covers/fantasy_book1.jpg'),
     description: 'A captivating story about a kingdom hidden in mist and the adventures that await those who dare to explore it.'
   },
   {
     id: '4a',
     title: 'The Dragon Heir',
     author: 'Marcus Flame',
-    coverImage: 'https://via.placeholder.com/150x200/8E44AD/FFFFFF?text=The+Dragon+Heir',
+    coverImage: require('../assets/images/book-covers/fantasy_book2.jpg'),
     description: 'A thrilling tale about a young woman who discovers she is the heir to a dragon kingdom.'
   },
   {
     id: '4b',
     title: 'Crystal Kingdoms',
     author: 'Violet Star',
-    coverImage: 'https://via.placeholder.com/150x200/7D3C98/FFFFFF?text=Crystal+Kingdoms',
+    coverImage: require('../assets/images/book-covers/fantasy_book3.jpg'),
     description: 'A captivating story about a kingdom made of crystals and the adventures that await those who dare to explore it.'
   },
   {
     id: '4c',
     title: 'Enchanted Forest',
     author: 'Luna Silvermoon',
-    coverImage: 'https://via.placeholder.com/150x200/AF7AC5/000000?text=Enchanted+Forest',
+    coverImage: require('../assets/images/book-covers/superhero_comics_book1.jpg'),
     description: 'A magical story about a young woman who discovers a hidden enchanted forest.'
   },
   {
     id: '4d',
     title: 'Raven\'s Magic',
     author: 'Damien Dark',
-    coverImage: 'https://via.placeholder.com/150x200/6C3483/FFFFFF?text=Raven%27s+Magic',
+    coverImage: require('../assets/images/book-covers/superhero_comics_book2.jpg'),
     description: 'A thrilling tale about a young man who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4e',
     title: 'Forgotten Realms',
     author: 'Peter Elderwood',
-    coverImage: 'https://via.placeholder.com/150x200/A569BD/FFFFFF?text=Forgotten+Realms',
+    coverImage: require('../assets/images/book-covers/superhero_comics_book3.jpg'),
     description: 'A captivating story about a young man who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4f',
     title: 'Crown of Shadows',
     author: 'Serena Knight',
-    coverImage: 'https://via.placeholder.com/150x200/8E44AD/FFFFFF?text=Crown+of+Shadows',
+    coverImage: require('../assets/images/book-covers/werewolf_book1.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4g',
     title: 'Wizard\'s Quest',
     author: 'Magnus Spell',
-    coverImage: 'https://via.placeholder.com/150x200/9B59B6/FFFFFF?text=Wizard%27s+Quest',
+    coverImage: require('../assets/images/book-covers/werewolf_book2.jpg'),
     description: 'A thrilling tale about a young man who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4h',
     title: 'The Elven Legacy',
     author: 'Arwen Leafsong',
-    coverImage: 'https://via.placeholder.com/150x200/C39BD3/000000?text=The+Elven+Legacy',
+    coverImage: require('../assets/images/book-covers/werewolf_book3.jpg'),
     description: 'A captivating story about a young man who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4i',
     title: 'Mystic Portals',
     author: 'Orion Starlight',
-    coverImage: 'https://via.placeholder.com/150x200/7D3C98/FFFFFF?text=Mystic+Portals',
+    coverImage: require('../assets/images/book-covers/manga_book1.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4j',
     title: 'The Sorcerer\'s Apprentice',
     author: 'Merlin Wise',
-    coverImage: 'https://via.placeholder.com/150x200/BB8FCE/FFFFFF?text=The+Sorcerer%27s+Apprentice',
+    coverImage: require('../assets/images/book-covers/manga_book2.jpg'),
     description: 'A thrilling tale about a young man who discovers a hidden world of magic and adventure.'
   },
   {
     id: '4k',
     title: 'Realm of Shadows',
     author: 'Lily Nightshade',
-    coverImage: 'https://via.placeholder.com/150x200/C39BD3/000000?text=Realm+of+Shadows',
+    coverImage: require('../assets/images/book-covers/manga_book3.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of magic and adventure.'
   },
 ];
@@ -387,84 +390,84 @@ const romanceBooks: Book[] = [
     id: '5',
     title: 'Whispers of Forever',
     author: 'Rebecca Rose',
-    coverImage: 'https://via.placeholder.com/150x200/E74C3C/FFFFFF?text=Whispers+of+Forever',
+    coverImage: require('../assets/images/book-covers/romance_book1.jpg'),
     description: 'A heartwarming love story that explores the concept of whispers and how they shape our reality.'
   },
   {
     id: '5a',
     title: 'Endless Summer',
     author: 'Sophia Heart',
-    coverImage: 'https://via.placeholder.com/150x200/CB4335/FFFFFF?text=Endless+Summer',
+    coverImage: require('../assets/images/book-covers/romance_book2.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of love and adventure.'
   },
   {
     id: '5b',
     title: 'Autumn\'s Embrace',
     author: 'Daniel Love',
-    coverImage: 'https://via.placeholder.com/150x200/EC7063/FFFFFF?text=Autumn%27s+Embrace',
+    coverImage: require('../assets/images/book-covers/romance_book3.jpg'),
     description: 'A heartwarming love story that explores the concept of autumn and how it shapes our reality.'
   },
   {
     id: '5c',
     title: 'Chance Encounters',
     author: 'Jennifer Spark',
-    coverImage: 'https://via.placeholder.com/150x200/F1948A/000000?text=Chance+Encounters',
+    coverImage: require('../assets/images/book-covers/contemporary_romance_book1.jpg'),
     description: 'A thrilling tale about a chance encounter that changes the course of two people\'s lives.'
   },
   {
     id: '5d',
     title: 'Last Dance',
     author: 'Amelia Grace',
-    coverImage: 'https://via.placeholder.com/150x200/B03A2E/FFFFFF?text=Last+Dance',
+    coverImage: require('../assets/images/book-covers/contemporary_romance_book2.jpg'),
     description: 'A heartwarming love story that explores the concept of last dance and how it shapes our reality.'
   },
   {
     id: '5e',
     title: 'Midnight Roses',
     author: 'Vincent Valentine',
-    coverImage: 'https://via.placeholder.com/150x200/E6B0AA/000000?text=Midnight+Roses',
+    coverImage: require('../assets/images/book-covers/contemporary_romance_book3.jpg'),
     description: 'A captivating love story that explores the concept of midnight roses and how they shape our reality.'
   },
   {
     id: '5f',
     title: 'Stolen Hearts',
     author: 'Charlotte Love',
-    coverImage: 'https://via.placeholder.com/150x200/E74C3C/FFFFFF?text=Stolen+Hearts',
+    coverImage: require('../assets/images/book-covers/historical_romance_book1.jpg'),
     description: 'A thrilling tale about a stolen heart and the consequences that follow.'
   },
   {
     id: '5g',
     title: 'Winter\'s Passion',
     author: 'Gabriel Snow',
-    coverImage: 'https://via.placeholder.com/150x200/C0392B/FFFFFF?text=Winter%27s+Passion',
+    coverImage: require('../assets/images/book-covers/historical_romance_book2.jpg'),
     description: 'A captivating love story that explores the concept of winter and how it shapes our reality.'
   },
   {
     id: '5h',
     title: 'Sweet Surrenders',
     author: 'Olivia Bloom',
-    coverImage: 'https://via.placeholder.com/150x200/F5B7B1/000000?text=Sweet+Surrenders',
+    coverImage: require('../assets/images/book-covers/historical_romance_book3.jpg'),
     description: 'A heartwarming love story that explores the concept of sweet surrender and how it shapes our reality.'
   },
   {
     id: '5i',
     title: 'Forever Yours',
     author: 'Robert Soulmate',
-    coverImage: 'https://via.placeholder.com/150x200/D98880/000000?text=Forever+Yours',
+    coverImage: require('../assets/images/book-covers/paranormal_romance_book1.jpg'),
     description: 'A thrilling tale about a soulmate connection that lasts forever.'
   },
   {
     id: '5j',
     title: 'Whispers of Love',
     author: 'Rose Valentine',
-    coverImage: 'https://via.placeholder.com/150x200/CD6155/FFFFFF?text=Whispers+of+Love',
+    coverImage: require('../assets/images/book-covers/paranormal_romance_book2.jpg'),
     description: 'A heartwarming love story that explores the concept of whispers and how they shape our reality.'
   },
   {
     id: '5k',
     title: 'Ocean Hearts',
     author: 'Marina Tides',
-    coverImage: 'https://via.placeholder.com/150x200/EC7063/FFFFFF?text=Ocean+Hearts',
+    coverImage: require('../assets/images/book-covers/paranormal_romance_book3.jpg'),
     description: 'A captivating love story that explores the concept of ocean hearts and how they shape our reality.'
   },
 ];
@@ -474,84 +477,84 @@ const historicalFictionBooks: Book[] = [
     id: '6',
     title: 'Echoes of Time',
     author: 'William Montgomery',
-    coverImage: 'https://via.placeholder.com/150x200/A67C52/FFFFFF?text=Echoes+of+Time',
+    coverImage: require('../assets/images/book-covers/history_book1.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of time travel.'
   },
   {
     id: '6a',
     title: 'The Tudor Secret',
     author: 'Elizabeth Reigns',
-    coverImage: 'https://via.placeholder.com/150x200/935116/FFFFFF?text=The+Tudor+Secret',
+    coverImage: require('../assets/images/book-covers/history_book2.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of Tudor secrets.'
   },
   {
     id: '6b',
     title: 'Whispers of War',
     author: 'Colonel Richards',
-    coverImage: 'https://via.placeholder.com/150x200/BA4A00/FFFFFF?text=Whispers+of+War',
+    coverImage: require('../assets/images/book-covers/history_book3.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of war secrets.'
   },
   {
     id: '6c',
     title: 'Renaissance Dreams',
     author: 'Isabella Florence',
-    coverImage: 'https://via.placeholder.com/150x200/D0B49F/000000?text=Renaissance+Dreams',
+    coverImage: require('../assets/images/book-covers/biography_book1.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of Renaissance secrets.'
   },
   {
     id: '6d',
     title: 'Ancient Promises',
     author: 'Harriet Scholar',
-    coverImage: 'https://via.placeholder.com/150x200/7E5109/FFFFFF?text=Ancient+Promises',
+    coverImage: require('../assets/images/book-covers/biography_book2.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of ancient promises.'
   },
   {
     id: '6e',
     title: 'The Victorian Mystery',
     author: 'Theodore Wells',
-    coverImage: 'https://via.placeholder.com/150x200/B9770E/FFFFFF?text=The+Victorian+Mystery',
+    coverImage: require('../assets/images/book-covers/biography_book3.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of Victorian secrets.'
   },
   {
     id: '6f',
     title: 'Medieval Legends',
     author: 'Arthur Knight',
-    coverImage: 'https://via.placeholder.com/150x200/B7950B/FFFFFF?text=Medieval+Legends',
+    coverImage: require('../assets/images/book-covers/non_fiction_book1.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of medieval legends.'
   },
   {
     id: '6g',
     title: 'Dynasty of Kings',
     author: 'Helena Royal',
-    coverImage: 'https://via.placeholder.com/150x200/9A7D0A/FFFFFF?text=Dynasty+of+Kings',
+    coverImage: require('../assets/images/book-covers/non_fiction_book2.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of dynasty secrets.'
   },
   {
     id: '6h',
     title: 'Civil War Letters',
     author: 'Samuel Union',
-    coverImage: 'https://via.placeholder.com/150x200/D4AC0D/FFFFFF?text=Civil+War+Letters',
+    coverImage: require('../assets/images/book-covers/non_fiction_book3.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of Civil War secrets.'
   },
   {
     id: '6i',
     title: 'The Roaring Twenties',
     author: 'Fitzgerald Jones',
-    coverImage: 'https://via.placeholder.com/150x200/C9A738/000000?text=The+Roaring+Twenties',
+    coverImage: require('../assets/images/book-covers/historical_romance_book1.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of Roaring Twenties secrets.'
   },
   {
     id: '6j',
     title: 'Ancient Rome',
     author: 'Julius Scholar',
-    coverImage: 'https://via.placeholder.com/150x200/D35400/FFFFFF?text=Ancient+Rome',
+    coverImage: require('../assets/images/book-covers/historical_romance_book2.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of ancient Roman secrets.'
   },
   {
     id: '6k',
     title: 'The Explorer\'s Journal',
     author: 'Christopher Voyage',
-    coverImage: 'https://via.placeholder.com/150x200/E59866/000000?text=The+Explorer%27s+Journal',
+    coverImage: require('../assets/images/book-covers/historical_romance_book3.jpg'),
     description: 'A thrilling tale about a young man who discovers a hidden world of explorer secrets.'
   },
 ];
@@ -561,84 +564,84 @@ const scienceFictionBooks: Book[] = [
     id: '7',
     title: 'Beyond the Stars',
     author: 'Alexis Chen',
-    coverImage: 'https://via.placeholder.com/150x200/3498DB/FFFFFF?text=Beyond+the+Stars',
+    coverImage: require('../assets/images/book-covers/scifi_book1.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of space travel.'
   },
   {
     id: '7a',
     title: 'Quantum Dreams',
     author: 'Dr. Neil Space',
-    coverImage: 'https://via.placeholder.com/150x200/2E86C1/FFFFFF?text=Quantum+Dreams',
+    coverImage: require('../assets/images/book-covers/scifi_book2.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of quantum travel.'
   },
   {
     id: '7b',
     title: 'The Mars Colony',
     author: 'Astro Williams',
-    coverImage: 'https://via.placeholder.com/150x200/2874A6/FFFFFF?text=The+Mars+Colony',
+    coverImage: require('../assets/images/book-covers/scifi_book3.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of Mars travel.'
   },
   {
     id: '7c',
     title: 'Android Heart',
     author: 'Roberta Tech',
-    coverImage: 'https://via.placeholder.com/150x200/5DADE2/000000?text=Android+Heart',
+    coverImage: require('../assets/images/book-covers/graphic_novels_book1.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of android travel.'
   },
   {
     id: '7d',
     title: 'Galactic Empire',
     author: 'Orion Stardust',
-    coverImage: 'https://via.placeholder.com/150x200/1B4F72/FFFFFF?text=Galactic+Empire',
+    coverImage: require('../assets/images/book-covers/graphic_novels_book2.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of galactic travel.'
   },
   {
     id: '7e',
     title: 'Time Fracture',
     author: 'Professor Chronos',
-    coverImage: 'https://via.placeholder.com/150x200/85C1E9/000000?text=Time+Fracture',
+    coverImage: require('../assets/images/book-covers/graphic_novels_book3.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of time travel.'
   },
   {
     id: '7f',
     title: 'Cyber Revolution',
     author: 'Neo Matrix',
-    coverImage: 'https://via.placeholder.com/150x200/2980B9/FFFFFF?text=Cyber+Revolution',
+    coverImage: require('../assets/images/book-covers/adventure_book2.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of cyber travel.'
   },
   {
     id: '7g',
     title: 'Space Station Omega',
     author: 'Commander Nova',
-    coverImage: 'https://via.placeholder.com/150x200/1F618D/FFFFFF?text=Space+Station+Omega',
+    coverImage: require('../assets/images/book-covers/adventure_book3.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of space travel.'
   },
   {
     id: '7h',
     title: 'AI Uprising',
     author: 'Dr. Turing',
-    coverImage: 'https://via.placeholder.com/150x200/7FB3D5/000000?text=AI+Uprising',
+    coverImage: require('../assets/images/book-covers/thriller_book1.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of AI travel.'
   },
   {
     id: '7i',
     title: 'Parallel Worlds',
     author: 'Quantum Jones',
-    coverImage: 'https://via.placeholder.com/150x200/2471A3/FFFFFF?text=Parallel+Worlds',
+    coverImage: require('../assets/images/book-covers/adventure_book2.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of parallel travel.'
   },
   {
     id: '7j',
     title: 'Virtual Worlds',
     author: 'Pixel Wright',
-    coverImage: 'https://via.placeholder.com/150x200/3498DB/FFFFFF?text=Virtual+Worlds',
+    coverImage: require('../assets/images/book-covers/thriller_book3.jpg'),
     description: 'A captivating story about a young woman who discovers a hidden world of virtual travel.'
   },
   {
     id: '7k',
     title: 'Quantum Paradox',
     author: 'Dr. Heisenberg',
-    coverImage: 'https://via.placeholder.com/150x200/2E86C1/FFFFFF?text=Quantum+Paradox',
+    coverImage: require('../assets/images/book-covers/scifi_book2.jpg'),
     description: 'A thrilling tale about a young woman who discovers a hidden world of quantum travel.'
   },
 ];
@@ -663,6 +666,7 @@ export default function ReadingScreen() {
 
   // Wishlist state
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [wishlistedBooks, setWishlistedBooks] = useState<Book[]>([]);
 
   // Button animation values
   const readNowAnimation = useRef(new Animated.Value(1)).current;
@@ -697,6 +701,25 @@ export default function ReadingScreen() {
   const [selectedRecommendedBook, setSelectedRecommendedBook] = useState(0);
   const [recommendedPage, setRecommendedPage] = useState(0);
   const fadeAnimRecommended = useRef(new Animated.Value(0)).current;
+  
+  // Search functionality
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Book[]>([]);
+  
+  // Animation for search modal
+  const searchAnimation = useRef(new Animated.Value(0)).current;
+
+  // Helper function to paginate books
+  const paginateBooks = (books: Book[], page: number): Book[] => {
+    const startIndex = page * booksPerPage;
+    return books.slice(startIndex, startIndex + booksPerPage);
+  };
+
+  // Load wishlist from AsyncStorage when component mounts
+  useEffect(() => {
+    loadWishlistFromStorage();
+  }, []);
 
   // Animation when component mounts
   useEffect(() => {
@@ -773,6 +796,49 @@ export default function ReadingScreen() {
     loadUserPreferences();
   }, []);
 
+  // Function to load wishlist from AsyncStorage
+  const loadWishlistFromStorage = async () => {
+    try {
+      // Load wishlist IDs
+      const wishlistJson = await AsyncStorage.getItem('wishlist');
+      if (wishlistJson) {
+        const savedWishlist = JSON.parse(wishlistJson);
+        setWishlist(savedWishlist);
+      }
+      
+      // Load full wishlist books data
+      const wishlistedBooksJson = await AsyncStorage.getItem('wishlistedBooks');
+      if (wishlistedBooksJson) {
+        const savedWishlistedBooks = JSON.parse(wishlistedBooksJson);
+        setWishlistedBooks(savedWishlistedBooks);
+      }
+    } catch (error) {
+      console.error('Failed to load wishlist from storage:', error);
+    }
+  };
+
+  // Function to save wishlist to AsyncStorage
+  const saveWishlistToStorage = async (newWishlist: string[], newWishlistedBooks: Book[]) => {
+    try {
+      // Save wishlist IDs
+      await AsyncStorage.setItem('wishlist', JSON.stringify(newWishlist));
+      
+      // Save full wishlist books data
+      await AsyncStorage.setItem('wishlistedBooks', JSON.stringify(newWishlistedBooks));
+    } catch (error) {
+      console.error('Failed to save wishlist to storage:', error);
+    }
+  };
+
+  // Show toast message
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('', message, [{ text: 'OK' }], { cancelable: true });
+    }
+  };
+
   // Function to get recommended books based on selected genres
   const getRecommendedBooks = (selectedGenres: string[]): Book[] => {
     const genreToBookMap: Record<string, Book[]> = {
@@ -825,8 +891,16 @@ export default function ReadingScreen() {
   };
 
   const handleContinueReading = () => {
-    // Handle continue reading action
-    console.log('Continue reading pressed');
+    // Navigate to the book reader page with current book info
+    router.push({
+      pathname: '/book-reader',
+      params: {
+        bookTitle: 'Hunting Sweetie Rose',
+        bookAuthor: 'Jack Fredrickson',
+        currentPage: 235,
+        totalPages: 345
+      }
+    });
   };
 
   const handleReadNow = (book: Book) => {
@@ -844,18 +918,22 @@ export default function ReadingScreen() {
         duration: 100,
         useNativeDriver: true,
       })
-    ]).start();
+    ]).start(() => {
+      // Navigate to the book reader page with selected book info
+      router.push({
+        pathname: '/book-reader',
+        params: {
+          bookTitle: book.title,
+          bookAuthor: book.author,
+          currentPage: 1,
+          totalPages: 345 // This would be dynamic in a real app
+        }
+      });
+    });
   };
 
-  const toggleWishlist = (bookId: string) => {
-    setWishlist(prev => {
-      if (prev.includes(bookId)) {
-        return prev.filter(id => id !== bookId);
-      } else {
-        return [...prev, bookId];
-      }
-    });
-    
+  // Function to add or remove a book from wishlist
+  const toggleWishlist = (book: Book) => {
     // Animate the wishlist button
     Animated.sequence([
       Animated.timing(wishlistAnimation, {
@@ -869,18 +947,141 @@ export default function ReadingScreen() {
         useNativeDriver: true,
       })
     ]).start();
+
+    // Update wishlist state
+    if (wishlist.includes(book.id)) {
+      // Remove from wishlist
+      const newWishlist = wishlist.filter(id => id !== book.id);
+      const newWishlistedBooks = wishlistedBooks.filter(b => b.id !== book.id);
+      
+      setWishlist(newWishlist);
+      setWishlistedBooks(newWishlistedBooks);
+      
+      // Save to AsyncStorage
+      saveWishlistToStorage(newWishlist, newWishlistedBooks);
+      
+      // Show toast message
+      showToast(`Removed ${book.title} from wishlist`);
+    } else {
+      // Add to wishlist
+      const newWishlist = [...wishlist, book.id];
+      const newWishlistedBooks = [...wishlistedBooks, book];
+      
+      setWishlist(newWishlist);
+      setWishlistedBooks(newWishlistedBooks);
+      
+      // Save to AsyncStorage
+      saveWishlistToStorage(newWishlist, newWishlistedBooks);
+      
+      // Show toast message
+      showToast(`Added ${book.title} to wishlist`);
+    }
   };
 
   const handleSearchMore = (category: string) => {
-    console.log(`Searching more in category: ${category}`);
-    // Navigation would go here
+    // Initialize search results with the appropriate category books
+    let categoryBooks: Book[] = [];
+    
+    switch(category) {
+      case "Want to read":
+        categoryBooks = booksToRead;
+        break;
+      case "Crime & Mystery":
+        categoryBooks = crimeMysteryBooks;
+        break;
+      case "Short stories":
+        categoryBooks = shortStoryBooks;
+        break;
+      case "Fantasy":
+        categoryBooks = fantasyBooks;
+        break;
+      case "Romance":
+        categoryBooks = romanceBooks;
+        break;
+      case "Historical Fiction":
+        categoryBooks = historicalFictionBooks;
+        break;
+      case "Science Fiction":
+        categoryBooks = scienceFictionBooks;
+        break;
+      case "Recommendations":
+        categoryBooks = recommendedBooks;
+        break;
+      default:
+        // Default to all books if category is not recognized
+        categoryBooks = [
+          ...booksToRead,
+          ...crimeMysteryBooks,
+          ...shortStoryBooks,
+          ...fantasyBooks,
+          ...romanceBooks,
+          ...historicalFictionBooks,
+          ...scienceFictionBooks
+        ];
+    }
+    
+    // Set category name in search box
+    setSearchQuery(category);
+    
+    // Set search results to the category books
+    setSearchResults(categoryBooks);
+    
+    // Show search modal with pre-populated results
+    setSearchVisible(true);
+    Animated.timing(searchAnimation, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  // Perform search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    if (query.length > 1) {
+      // Combine all books for searching
+      const allBooks = [
+        ...booksToRead,
+        ...crimeMysteryBooks,
+        ...shortStoryBooks,
+        ...fantasyBooks,
+        ...romanceBooks,
+        ...historicalFictionBooks,
+        ...scienceFictionBooks
+      ];
+      
+      // Filter books based on query
+      const filteredResults = allBooks.filter(book => 
+        book.title.toLowerCase().includes(query.toLowerCase()) ||
+        book.author.toLowerCase().includes(query.toLowerCase()) ||
+        book.description.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      setSearchResults(filteredResults);
+    } else {
+      setSearchResults([]);
+    }
   };
 
-  // Helper function to paginate books
-  const paginateBooks = (books: Book[], page: number): Book[] => {
-    const startIndex = page * booksPerPage;
-    return books.slice(startIndex, startIndex + booksPerPage);
+  // Navigate to library screen
+  const navigateToLibrary = () => {
+    router.replace('/library');
   };
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
+  // Get paginated book lists
+  const paginatedRecommended = paginateBooks(recommendedBooks, recommendedPage);
+  const paginatedWantToRead = paginateBooks(booksToRead, wantToReadPage);
+  const paginatedCrimeMystery = paginateBooks(crimeMysteryBooks, crimeMysteryPage);
+  const paginatedShortStory = paginateBooks(shortStoryBooks, shortStoryPage);
+  const paginatedFantasy = paginateBooks(fantasyBooks, fantasyPage);
+  const paginatedRomance = paginateBooks(romanceBooks, romancePage);
+  const paginatedHistoricalFiction = paginateBooks(historicalFictionBooks, historicalFictionPage);
+  const paginatedSciFi = paginateBooks(scienceFictionBooks, sciFiPage);
 
   // Navigation buttons for pagination
   const renderPaginationButtons = (
@@ -932,7 +1133,7 @@ export default function ReadingScreen() {
         <Animated.View style={{ transform: [{ scale: wishlistAnimation }] }}>
           <TouchableOpacity 
             style={[styles.wishlistButton, isInWishlist && styles.wishlistButtonActive]}
-            onPress={() => toggleWishlist(book.id)}
+            onPress={() => toggleWishlist(book)}
             activeOpacity={0.7}
           >
             <AntDesign 
@@ -989,7 +1190,7 @@ export default function ReadingScreen() {
           activeOpacity={0.7}
         >
           <Image
-            source={{ uri: item.coverImage }}
+            source={typeof item.coverImage === 'string' ? { uri: item.coverImage } : item.coverImage}
             style={[
               styles.bookItemCover,
               isSelected ? styles.selectedBookCover : styles.nonSelectedBookCover
@@ -1009,14 +1210,6 @@ export default function ReadingScreen() {
     );
   };
 
-  // Search functionality
-  const [searchVisible, setSearchVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Book[]>([]);
-  
-  // Animation for search modal
-  const searchAnimation = useRef(new Animated.Value(0)).current;
-  
   // Toggle search modal
   const toggleSearch = () => {
     if (searchVisible) {
@@ -1028,8 +1221,10 @@ export default function ReadingScreen() {
       }).start(() => {
         setSearchVisible(false);
         setSearchQuery('');
+        setSearchResults([]);
       });
     } else {
+      // Show search modal
       setSearchVisible(true);
       // Animate opening
       Animated.timing(searchAnimation, {
@@ -1039,53 +1234,10 @@ export default function ReadingScreen() {
       }).start();
     }
   };
-  
-  // Perform search
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.length > 1) {
-      // Combine all books for searching
-      const allBooks = [
-        ...booksToRead,
-        ...crimeMysteryBooks,
-        ...shortStoryBooks,
-        ...fantasyBooks,
-        ...romanceBooks,
-        ...historicalFictionBooks,
-        ...scienceFictionBooks
-      ];
-      
-      // Filter books based on query
-      const results = allBooks.filter(book => 
-        book.title.toLowerCase().includes(query.toLowerCase()) ||
-        book.author.toLowerCase().includes(query.toLowerCase()) ||
-        book.description.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      setSearchResults(results);
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  // Navigate to library screen
-  const navigateToLibrary = () => {
-    router.replace('/library');
-  };
 
   if (!fontsLoaded) {
     return null;
   }
-
-  // Get paginated book lists
-  const paginatedRecommended = paginateBooks(recommendedBooks, recommendedPage);
-  const paginatedWantToRead = paginateBooks(booksToRead, wantToReadPage);
-  const paginatedCrimeMystery = paginateBooks(crimeMysteryBooks, crimeMysteryPage);
-  const paginatedShortStory = paginateBooks(shortStoryBooks, shortStoryPage);
-  const paginatedFantasy = paginateBooks(fantasyBooks, fantasyPage);
-  const paginatedRomance = paginateBooks(romanceBooks, romancePage);
-  const paginatedHistoricalFiction = paginateBooks(historicalFictionBooks, historicalFictionPage);
-  const paginatedSciFi = paginateBooks(scienceFictionBooks, sciFiPage);
 
   return (
     <View style={styles.container}>
@@ -1113,8 +1265,8 @@ export default function ReadingScreen() {
             ]}
           >
             <View style={styles.bookInfo}>
-              <Text style={styles.bookTitle}>Unseen Shadow</Text>
-              <Text style={styles.authorName}>Terry Doyle</Text>
+              <Text style={styles.bookTitle}>Hunting Sweetie Rose</Text>
+              <Text style={styles.authorName}>Jack Fredrickson</Text>
               
               <View style={styles.ratingContainer}>
                 <FontAwesome name="star" size={18} color="#F2BB36" />
@@ -1138,7 +1290,7 @@ export default function ReadingScreen() {
             </View>
             
             <Image 
-              source={{ uri: 'https://via.placeholder.com/150x200/FFB6C1/FFFFFF?text=UNSEEN+SHADOW' }}
+              source={require('../assets/images/book-covers/mystery_book1.jpg')}
               style={styles.bookCover}
             />
           </Animated.View>
@@ -1537,23 +1689,41 @@ export default function ReadingScreen() {
             
             {/* Search Results */}
             <ScrollView style={styles.searchResults}>
+              {searchQuery && (
+                <Text style={styles.searchCategoryTitle}>
+                  {searchResults.length} {searchResults.length === 1 ? 'result' : 'results'} for "{searchQuery}"
+                </Text>
+              )}
+              
               {searchResults.length > 0 ? (
                 searchResults.map((book, index) => (
                   <TouchableOpacity 
                     key={`search-${book.id}-${index}`}
                     style={styles.searchResultItem}
                     onPress={() => {
-                      console.log(`Selected book: ${book.title}`);
+                      // Navigate to book reader
+                      router.push({
+                        pathname: '/book-reader',
+                        params: {
+                          bookTitle: book.title,
+                          bookAuthor: book.author,
+                          currentPage: 1,
+                          totalPages: 345 // This would be dynamic in a real app
+                        }
+                      });
                       toggleSearch();
                     }}
                   >
                     <Image 
-                      source={{ uri: book.coverImage }} 
+                      source={typeof book.coverImage === 'string' ? { uri: book.coverImage } : book.coverImage} 
                       style={styles.searchResultImage} 
                     />
                     <View style={styles.searchResultInfo}>
                       <Text style={styles.searchResultTitle}>{book.title}</Text>
                       <Text style={styles.searchResultAuthor}>{book.author}</Text>
+                      <Text style={styles.searchResultDescription} numberOfLines={2}>
+                        {book.description}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 ))
@@ -1974,6 +2144,12 @@ const styles = StyleSheet.create({
     color: '#5C3D2F',
     marginTop: 5,
   },
+  searchResultDescription: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    color: '#5C3D2F',
+    marginTop: 5,
+  },
   noResultsContainer: {
     padding: 30,
     alignItems: 'center',
@@ -1995,5 +2171,13 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginTop: 15,
+  },
+  searchCategoryTitle: {
+    fontFamily: 'SpaceMono',
+    fontSize: 18,
+    color: '#4a4e82',
+    fontWeight: 'bold',
+    padding: 15,
+    paddingBottom: 10,
   },
 }); 
