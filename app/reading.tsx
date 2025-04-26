@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { Ionicons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundImage from '../components/BackgroundImage';
 
 SplashScreen.preventAutoHideAsync();
@@ -691,6 +692,12 @@ export default function ReadingScreen() {
   // ScrollView refs for smooth scrolling
   const scrollViewRef = useRef(null);
   
+  // State for recommended books based on user preferences
+  const [recommendedBooks, setRecommendedBooks] = useState<Book[]>([]);
+  const [selectedRecommendedBook, setSelectedRecommendedBook] = useState(0);
+  const [recommendedPage, setRecommendedPage] = useState(0);
+  const fadeAnimRecommended = useRef(new Animated.Value(0)).current;
+
   // Animation when component mounts
   useEffect(() => {
     const animations = [
@@ -739,6 +746,83 @@ export default function ReadingScreen() {
     
     Animated.parallel(animations).start();
   }, []);
+
+  // Load user's selected genres and set up recommendations
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const selectedGenresJson = await AsyncStorage.getItem('selectedGenres');
+        
+        if (selectedGenresJson) {
+          const selectedGenres = JSON.parse(selectedGenresJson);
+          const recommendations = getRecommendedBooks(selectedGenres);
+          setRecommendedBooks(recommendations);
+          
+          // Animate the recommendations section
+          Animated.timing(fadeAnimRecommended, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }).start();
+        }
+      } catch (error) {
+        console.error('Failed to load user preferences:', error);
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
+
+  // Function to get recommended books based on selected genres
+  const getRecommendedBooks = (selectedGenres: string[]): Book[] => {
+    const genreToBookMap: Record<string, Book[]> = {
+      'crime': crimeMysteryBooks,
+      'scifi': scienceFictionBooks,
+      'romance': romanceBooks,
+      'contemporary_romance': romanceBooks,
+      'historical_romance': romanceBooks,
+      'paranormal_romance': romanceBooks,
+      'fantasy': fantasyBooks,
+      'history': historicalFictionBooks,
+      'horror': crimeMysteryBooks, // using crime books as placeholder for horror
+      'biography': historicalFictionBooks, // using historical as placeholder for biography
+      'poetry': shortStoryBooks, // using short stories as placeholder for poetry
+      'superhero_comics': fantasyBooks, // using fantasy as placeholder for comics
+      'manga': fantasyBooks, // using fantasy as placeholder for manga
+      'graphic_novels': fantasyBooks, // using fantasy as placeholder for graphic novels
+      'thriller': crimeMysteryBooks,
+      'mystery': crimeMysteryBooks,
+      'adventure': fantasyBooks,
+      'short_story': shortStoryBooks,
+      'werewolf': fantasyBooks,
+      'non_fiction': historicalFictionBooks
+    };
+    
+    // Collect books from selected genres
+    let allRecommendedBooks: Book[] = [];
+    
+    selectedGenres.forEach(genreId => {
+      const genreBooks = genreToBookMap[genreId];
+      if (genreBooks) {
+        // Take 2 random books from each genre
+        const randomBooks = [...genreBooks]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 2);
+          
+        allRecommendedBooks = [...allRecommendedBooks, ...randomBooks];
+      }
+    });
+    
+    // If no genres were selected or no matching books found, return some default recommendations
+    if (allRecommendedBooks.length === 0) {
+      return booksToRead;
+    }
+
+    // Shuffle and return up to 12 books
+    return allRecommendedBooks
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 12);
+  };
 
   const handleContinueReading = () => {
     // Handle continue reading action
@@ -994,6 +1078,7 @@ export default function ReadingScreen() {
   }
 
   // Get paginated book lists
+  const paginatedRecommended = paginateBooks(recommendedBooks, recommendedPage);
   const paginatedWantToRead = paginateBooks(booksToRead, wantToReadPage);
   const paginatedCrimeMystery = paginateBooks(crimeMysteryBooks, crimeMysteryPage);
   const paginatedShortStory = paginateBooks(shortStoryBooks, shortStoryPage);
@@ -1058,6 +1143,47 @@ export default function ReadingScreen() {
             />
           </Animated.View>
         </View>
+        
+        {/* Recommended Books Section - only shown if user has selected genres */}
+        {recommendedBooks.length > 0 && (
+          <Animated.View style={[
+            styles.section,
+            { opacity: fadeAnimRecommended, transform: [{ translateY: fadeAnimRecommended.interpolate({
+              inputRange: [0, 1],
+              outputRange: [20, 0]
+            })}] }
+          ]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recommended For You</Text>
+              {renderSearchMoreButton("Recommendations")}
+            </View>
+            
+            <View style={styles.bookListContainer}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalBookList}
+                decelerationRate={0.85}
+                snapToInterval={width * 0.45}
+                snapToAlignment="center"
+              >
+                {paginatedRecommended.map((book: Book, index: number) => 
+                  renderBookItem(book, index, selectedRecommendedBook, setSelectedRecommendedBook)
+                )}
+              </ScrollView>
+              
+              {renderPaginationButtons(recommendedBooks, recommendedPage, setRecommendedPage)}
+            </View>
+            
+            {selectedRecommendedBook !== null && paginatedRecommended[selectedRecommendedBook] && (
+              <View style={styles.bookDescription}>
+                <Text style={styles.bookDescriptionText}>
+                  {paginatedRecommended[selectedRecommendedBook].description}
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        )}
         
         <Animated.View style={[
           styles.section,

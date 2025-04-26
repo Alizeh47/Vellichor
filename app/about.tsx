@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,16 +8,44 @@ import {
   Animated,
   Dimensions,
   ImageBackground,
+  Modal,
 } from 'react-native';
 import { useFonts } from 'expo-font';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import BackgroundImage from '../components/BackgroundImage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 SplashScreen.preventAutoHideAsync();
 
 const { width, height } = Dimensions.get('window');
+
+// Clickable tag component similar to FunTag in tropes.tsx
+const ClickableTag = ({ text, backgroundColor, smallText = false }: { text: string, backgroundColor: string, smallText?: boolean }) => {
+  const handleTagPress = async () => {
+    try {
+      // Save the tag text as the search query
+      await AsyncStorage.setItem('search_query', text);
+      // Navigate to browse screen
+      router.push('/browse');
+    } catch (error) {
+      console.error('Failed to save search query:', error);
+      router.push('/browse');
+    }
+  };
+
+  return (
+    <TouchableOpacity 
+      onPress={handleTagPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.tag, { backgroundColor }]}>
+        <Text style={[styles.tagText, smallText && { fontSize: 10 }]}>{text}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function AboutScreen() {
   const [fontsLoaded] = useFonts({
@@ -27,6 +55,7 @@ export default function AboutScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     if (fontsLoaded) {
@@ -39,9 +68,49 @@ export default function AboutScreen() {
     }
   }, [fontsLoaded]);
 
-  const handleBackPress = () => {
-    router.back();
+  // Check if user has chosen to skip this page
+  useEffect(() => {
+    const checkSkipPreference = async () => {
+      try {
+        const skipAboutPage = await AsyncStorage.getItem('skip_about_page');
+        if (skipAboutPage === 'true') {
+          // If user has chosen to always skip, redirect to reading
+          router.replace('/reading');
+        }
+      } catch (error) {
+        console.error('Failed to check preference:', error);
+      }
+    };
+    
+    checkSkipPreference();
+  }, []);
+
+  const handleClosePress = () => {
+    setModalVisible(true);
   };
+
+  const handleCloseOnce = () => {
+    setModalVisible(false);
+    router.replace('/reading');
+  };
+
+  const handleCloseAlways = async () => {
+    try {
+      // Save user preference to never show about page again
+      await AsyncStorage.setItem('skip_about_page', 'true');
+      setModalVisible(false);
+      router.replace('/reading');
+    } catch (error) {
+      console.error('Failed to save preference:', error);
+      router.replace('/reading');
+    }
+  };
+
+  // Emotional Bookshelf tags
+  const emotionalBookshelfTags = ['Soft Ache', 'Made Me Spiral', 'Felt Like Magic', 'Left Me Empty', 'Healed Something in Me'];
+  
+  // Moodboard Theme tags
+  const moodboardThemeTags = ['Feral Fantasy', 'Candlelight Academia', 'Wholesome Pain', 'Kingdomcore', 'Liminal Romance'];
 
   if (!fontsLoaded) {
     return null;
@@ -51,14 +120,49 @@ export default function AboutScreen() {
     <View style={styles.container}>
       <BackgroundImage />
       
-      <View style={styles.topButtonContainer}>
-        <TouchableOpacity 
-          style={styles.topBackButton}
-          onPress={handleBackPress}
-        >
-          <Ionicons name="arrow-back" size={24} color="#5C3D2F" />
-        </TouchableOpacity>
-      </View>
+      {/* Close Button */}
+      <TouchableOpacity 
+        style={styles.closeButton}
+        onPress={handleClosePress}
+      >
+        <Ionicons name="close" size={24} color="#5C3D2F" />
+      </TouchableOpacity>
+
+      {/* Close Options Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Skip About Page?</Text>
+            <Text style={styles.modalText}>Would you like to skip this page now or always?</Text>
+            
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={handleCloseOnce}
+            >
+              <Text style={styles.modalButtonText}>Skip Once</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.modalButtonAlways]}
+              onPress={handleCloseAlways}
+            >
+              <Text style={styles.modalButtonText}>Always Skip</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.modalButtonCancel]}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalButtonCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       
       <Animated.ScrollView 
         style={[styles.scrollView, { opacity: fadeAnim }]}
@@ -126,10 +230,12 @@ export default function AboutScreen() {
               Organize your personal library not by genre, but by emotional resonance. Create custom categories like:
             </Text>
             <View style={styles.tagContainer}>
-              {['Soft Ache', 'Made Me Spiral', 'Felt Like Magic', 'Left Me Empty', 'Healed Something in Me'].map((tag, index) => (
-                <View key={index} style={[styles.tag, { backgroundColor: getTagColor(index) }]}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
+              {emotionalBookshelfTags.map((tag, index) => (
+                <ClickableTag 
+                  key={index} 
+                  text={tag} 
+                  backgroundColor={getTagColor(index)} 
+                />
               ))}
             </View>
           </View>
@@ -241,10 +347,13 @@ export default function AboutScreen() {
               Choose from emotionally-charged aesthetics like:
             </Text>
             <View style={styles.tagContainer}>
-              {['Feral Fantasy', 'Candlelight Academia', 'Wholesome Pain', 'Kingdomcore', 'Liminal Romance'].map((tag, index) => (
-                <View key={index} style={[styles.tag, { backgroundColor: getTagColor(index + 5) }]}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
+              {moodboardThemeTags.map((tag, index) => (
+                <ClickableTag 
+                  key={index} 
+                  text={tag} 
+                  backgroundColor={getTagColor(index + 5)} 
+                  smallText={true}
+                />
               ))}
             </View>
           </View>
@@ -315,29 +424,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  topButtonContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    zIndex: 100,
-  },
-  topBackButton: {
-    padding: 10,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
   scrollView: {
     flex: 1,
-    marginTop: 80,
   },
   scrollContent: {
     padding: 24,
     paddingBottom: 80,
+    paddingTop: 10,
   },
   titleContainer: {
     alignItems: 'center',
@@ -459,10 +552,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   tag: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    margin: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    margin: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -472,7 +565,7 @@ const styles = StyleSheet.create({
   tagText: {
     color: '#fff',
     fontFamily: 'SpaceMono',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   quoteList: {
@@ -536,5 +629,81 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'Birthstone',
     fontSize: 28,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 100,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontFamily: 'Birthstone',
+    fontSize: 32,
+    color: '#2D484A',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontFamily: 'SpaceMono',
+    fontSize: 16,
+    color: '#5C3D2F',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#2D484A',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalButtonAlways: {
+    backgroundColor: '#623D33',
+  },
+  modalButtonCancel: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#5C3D2F',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'SpaceMono',
+  },
+  modalButtonCancelText: {
+    color: '#5C3D2F',
+    fontSize: 16,
+    fontFamily: 'SpaceMono',
   },
 }); 

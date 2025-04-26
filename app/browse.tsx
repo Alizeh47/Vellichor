@@ -10,12 +10,14 @@ import {
   Animated,
   TextInput,
   FlatList,
-  Pressable
+  Pressable,
+  ActivityIndicator
 } from 'react-native';
 import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { Ionicons, FontAwesome, AntDesign, Feather } from '@expo/vector-icons';
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 SplashScreen.preventAutoHideAsync();
 const { width, height } = Dimensions.get('window');
@@ -35,6 +37,201 @@ type RecentSearch = {
   count: number;
   color: string;
 };
+
+// Books data
+type Book = {
+  id: string;
+  title: string;
+  author: string;
+  coverImage: string;
+  description: string;
+  tags: string[];
+  tropes: string[];
+};
+
+// Sample books for search results
+const sampleBooks: Book[] = [
+  {
+    id: '1',
+    title: 'The Shadow Within',
+    author: 'Eleanor Grey',
+    coverImage: 'https://via.placeholder.com/150x200/4a4e82/FFFFFF?text=Shadow+Within',
+    description: 'A thrilling tale of mystery and intrigue in a world of shadows.',
+    tags: ['mystery', 'fantasy', 'dark', 'main character meltdowns', 'angst but make it pretty'],
+    tropes: ['Tragic Backstory', 'Morally Grey Love Interest', 'Found Family']
+  },
+  {
+    id: '2',
+    title: 'Lost Horizons',
+    author: 'Marcus Wells',
+    coverImage: 'https://via.placeholder.com/150x200/5C3D2F/FFFFFF?text=Lost+Horizons',
+    description: 'An adventure across dimensions in search of a forgotten world.',
+    tags: ['adventure', 'fantasy', 'soft magic & sharp morals', 'thrones made of longing'],
+    tropes: ['Quest with a Motley Crew', 'Found Family', 'Time Travel or Parallel Worlds', 'The Chosen One']
+  },
+  {
+    id: '3',
+    title: 'Whispers in the Dark',
+    author: 'Sophia Night',
+    coverImage: 'https://via.placeholder.com/150x200/916F5E/FFFFFF?text=Whispers',
+    description: 'The darkness holds secrets that are about to be revealed.',
+    tags: ['horror', 'thriller', 'whispers between pages', 'armor on, emotions off'],
+    tropes: ['Psychological Horror', 'Gothic Mansion', 'Unreliable Narrator', 'Secret Society']
+  },
+  {
+    id: '4',
+    title: 'Heart of the Storm',
+    author: 'Alexander Thunder',
+    coverImage: 'https://via.placeholder.com/150x200/B39285/FFFFFF?text=Heart+Storm',
+    description: 'A romance that blossoms in the midst of chaos and destruction.',
+    tags: ['romance', 'drama', 'read this with a blanket and tea', 'soft spells & secret swords'],
+    tropes: ['Enemies to Lovers', 'Forced Proximity', 'Tragic Backstory', 'Possessive Protector']
+  },
+  {
+    id: '5',
+    title: 'The Last Guardian',
+    author: 'Diana Shield',
+    coverImage: 'https://via.placeholder.com/150x200/C78E65/FFFFFF?text=Last+Guardian',
+    description: 'The final protector of an ancient power must choose between duty and desire.',
+    tags: ['fantasy', 'adventure', 'heir of heartache', 'cursed, crowned & complicated'],
+    tropes: ['Heir to the Throne', 'Forbidden Love', 'Ancient Prophecy', 'Tournament Arc']
+  },
+  {
+    id: '6',
+    title: 'Starlight Odyssey',
+    author: 'Neil Cosmos',
+    coverImage: 'https://via.placeholder.com/150x200/25323A/FFFFFF?text=Starlight',
+    description: 'A journey through the stars that will test the limits of humanity.',
+    tags: ['sci-fi', 'adventure', 'magic in the margins', 'still soft, still here'],
+    tropes: ['Found Family', 'Quest with a Motley Crew', 'Time Travel or Parallel Worlds']
+  },
+  {
+    id: '7',
+    title: 'Echoes of Yesterday',
+    author: 'Olivia Timeline',
+    coverImage: 'https://via.placeholder.com/150x200/623D33/FFFFFF?text=Echoes',
+    description: 'The past refuses to stay buried in this time-bending thriller.',
+    tags: ['thriller', 'mystery', 'a little bit lost, a lot in love', 'ghosts in the garden of kings'],
+    tropes: ['Unreliable Narrator', 'Time Travel or Parallel Worlds', 'The Guilt of Survival']
+  },
+  {
+    id: '8',
+    title: 'The Forgotten Spell',
+    author: 'Merlin Wise',
+    coverImage: 'https://via.placeholder.com/150x200/896E51/FFFFFF?text=Forgotten+Spell',
+    description: 'An ancient magic rediscovered could save the world—or destroy it.',
+    tags: ['fantasy', 'magic', 'magic that knows your name', 'moonlit crowns & quiet courage'],
+    tropes: ['Magic School / Academy', 'Ancient Prophecy', 'Magical Artifact', 'The Chosen One']
+  },
+  {
+    id: '9',
+    title: 'Crimson Ties',
+    author: 'Victoria Blood',
+    coverImage: 'https://via.placeholder.com/150x200/B8A174/FFFFFF?text=Crimson+Ties',
+    description: 'In a world of vampires, love is the most dangerous addiction.',
+    tags: ['paranormal', 'romance', 'loyalty, laced in lavender', 'soft magic & sharp morals'],
+    tropes: ['Forbidden Love', 'Enemies to Lovers', 'Slow Burn', 'Beast & Beauty']
+  },
+  {
+    id: '10',
+    title: 'Silent Witness',
+    author: 'Thomas Observer',
+    coverImage: 'https://via.placeholder.com/150x200/917E78/FFFFFF?text=Silent+Witness',
+    description: "The only witness to the crime can't speak, but the truth will be heard.",
+    tags: ['mystery', 'thriller', 'candlelight reads & cloudy thoughts', 'waltzing through warzones'],
+    tropes: ['Unreliable Narrator', 'Psychological Horror', 'The Betrayer']
+  },
+  {
+    id: '11',
+    title: 'Midnight Embrace',
+    author: 'Raven Nightshade',
+    coverImage: 'https://via.placeholder.com/150x200/392F41/FFFFFF?text=Midnight+Embrace',
+    description: 'When darkness falls, their forbidden romance ignites.',
+    tags: ['romance', 'paranormal', 'read with chocolate', 'moonlight confessions'],
+    tropes: ['Enemies to Lovers', 'Forbidden Love', 'Slow Burn', 'Grumpy x Sunshine']
+  },
+  {
+    id: '12',
+    title: 'Kingdom of Glass',
+    author: 'Crystal Shard',
+    coverImage: 'https://via.placeholder.com/150x200/718EA4/FFFFFF?text=Kingdom+Glass',
+    description: 'In a realm where power is as fragile as glass, betrayal shatters everything.',
+    tags: ['fantasy', 'royal intrigue', 'crowns of sorrow', 'glittering dangers'],
+    tropes: ['Heir to the Throne', 'Tournament Arc', 'The Betrayer', 'Enemies Forced to Work Together']
+  },
+  {
+    id: '13',
+    title: 'One Bed, Two Hearts',
+    author: 'Rose Thornfield',
+    coverImage: 'https://via.placeholder.com/150x200/D77A61/FFFFFF?text=One+Bed',
+    description: 'A snowstorm, a booking error, and undeniable chemistry.',
+    tags: ['romance', 'contemporary', 'cozy vibes', 'winter romance'],
+    tropes: ['One Bed', 'Forced Proximity', 'Enemies to Lovers', 'Fake Dating']
+  },
+  {
+    id: '14',
+    title: 'The Royal Deception',
+    author: 'Crown Secrets',
+    coverImage: 'https://via.placeholder.com/150x200/496DDB/FFFFFF?text=Royal+Deception',
+    description: 'She never expected the gardener to be the crown prince in disguise.',
+    tags: ['romance', 'royalty', 'secret identities', 'palace intrigue'],
+    tropes: ['Secret Royal / Hidden Identity', 'Fake Dating', 'Slow Burn', 'Opposites Attract']
+  },
+  {
+    id: '15',
+    title: 'Academy of Elemental Magic',
+    author: 'Spell Caster',
+    coverImage: 'https://via.placeholder.com/150x200/564787/FFFFFF?text=Elemental+Academy',
+    description: 'Four students with extraordinary powers. One academy with dangerous secrets.',
+    tags: ['fantasy', 'magic school', 'elemental powers', 'friendship'],
+    tropes: ['Magic School / Academy', 'Found Family', 'Tournament Arc', 'Mysterious Powers Awaken']
+  },
+  {
+    id: '16',
+    title: 'The Marriage Contract',
+    author: 'Vow Breaker',
+    coverImage: 'https://via.placeholder.com/150x200/A69CAC/FFFFFF?text=Marriage+Contract',
+    description: 'Their marriage was supposed to be just business. Their hearts had other plans.',
+    tags: ['romance', 'billionaire', 'contract marriage', 'business arrangement'],
+    tropes: ['Marriage of Convenience', 'Slow Burn', 'Enemies to Lovers', 'Grumpy x Sunshine']
+  },
+  {
+    id: '17',
+    title: 'Dragon Rider\'s Promise',
+    author: 'Flame Tamer',
+    coverImage: 'https://via.placeholder.com/150x200/634B66/FFFFFF?text=Dragon+Rider',
+    description: 'The bond between dragon and rider transcends the war that divides them.',
+    tags: ['fantasy', 'dragons', 'war', 'magical bond'],
+    tropes: ['Dragons & Their Riders', 'Forbidden Love', 'Ancient Prophecy', 'Lovers on Opposite Sides of a War']
+  },
+  {
+    id: '18',
+    title: 'Small Town Secrets',
+    author: 'Maple Grove',
+    coverImage: 'https://via.placeholder.com/150x200/9E6240/FFFFFF?text=Small+Town',
+    description: 'Returning to her hometown uncovers secrets she never expected to find.',
+    tags: ['romance', 'mystery', 'homecoming', 'small town charm'],
+    tropes: ['Small Town Romance', 'Second Chance Romance', 'Secret Society', 'Breaking Family Patterns']
+  },
+  {
+    id: '19',
+    title: 'Age of Wisdom',
+    author: 'Time Weaver',
+    coverImage: 'https://via.placeholder.com/150x200/899878/FFFFFF?text=Age+Wisdom',
+    description: 'The decades between them couldn\'t keep their hearts apart.',
+    tags: ['romance', 'age gap', 'wisdom', 'life experience'],
+    tropes: ['Age Gap Romance', 'Slow Burn', 'Making Peace with the Person You Were at 19']
+  },
+  {
+    id: '20',
+    title: 'The Mind\'s Labyrinth',
+    author: 'Psyche Wanderer',
+    coverImage: 'https://via.placeholder.com/150x200/32292F/FFFFFF?text=Mind+Labyrinth',
+    description: 'Inside his fractured mind lies the truth that could save them all.',
+    tags: ['psychological', 'thriller', 'mind games', 'reality bending'],
+    tropes: ['Psychological Horror', 'The Quiet Breakdown of a Once Strong Mind', 'Unreliable Narrator']
+  }
+];
 
 const categories: Category[] = [
   { id: '1', title: 'Romance', image: 'https://via.placeholder.com/150/0066ff/FFFFFF?text=Romance', icon: 'heart', color: '#FF6B6B' },
@@ -71,6 +268,23 @@ const recentSearches: RecentSearch[] = [
   { id: '5', query: 'Science Fiction', count: 201, color: '#3d7068' },
 ];
 
+// Add tag-to-book mapping for About page tags
+const aboutPageTagMapping: Record<string, string[]> = {
+  // Emotional Bookshelf tags
+  'Soft Ache': ['2', '4', '11', '13', '19'],
+  'Made Me Spiral': ['3', '7', '10', '20'],
+  'Felt Like Magic': ['1', '5', '8', '15', '17'],
+  'Left Me Empty': ['3', '7', '10', '20'],
+  'Healed Something in Me': ['4', '9', '13', '16', '18'],
+  
+  // Moodboard Theme tags
+  'Feral Fantasy': ['5', '8', '12', '15', '17'],
+  'Candlelight Academia': ['2', '7', '14', '15', '20'],
+  'Wholesome Pain': ['4', '9', '11', '13', '19'],
+  'Kingdomcore': ['1', '5', '12', '14', '17'],
+  'Liminal Romance': ['4', '9', '11', '13', '16']
+};
+
 export default function BrowseScreen() {
   const [fontsLoaded] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -88,6 +302,28 @@ export default function BrowseScreen() {
   // Search text state
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Book[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Load search query if coming from tropes screen
+  useEffect(() => {
+    const loadSearchQuery = async () => {
+      try {
+        const savedQuery = await AsyncStorage.getItem('search_query');
+        if (savedQuery) {
+          setSearchText(savedQuery);
+          // Perform search with the loaded query
+          performSearch(savedQuery);
+          // Clear the saved query after loading it
+          await AsyncStorage.removeItem('search_query');
+        }
+      } catch (error) {
+        console.error('Failed to load search query:', error);
+      }
+    };
+    
+    loadSearchQuery();
+  }, []);
   
   // Animation when component mounts
   useEffect(() => {
@@ -144,6 +380,76 @@ export default function BrowseScreen() {
     
     Animated.stagger(20, staggerAnimSequence).start();
   }, []);
+
+  // Search functionality
+  const performSearch = (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    // Simulate API call with timeout
+    setTimeout(() => {
+      const lowerQuery = query.toLowerCase();
+      let results: Book[] = [];
+      
+      // Check if query exactly matches one of our About page tags (case insensitive)
+      const exactTag = Object.keys(aboutPageTagMapping).find(
+        tag => tag.toLowerCase() === query.toLowerCase()
+      );
+      
+      if (exactTag) {
+        // Get the book IDs for this tag
+        const bookIds = aboutPageTagMapping[exactTag];
+        // Filter books by these IDs
+        results = sampleBooks.filter(book => bookIds.includes(book.id));
+      } 
+      // Handle hashtag searches (from trope cards)
+      else if (lowerQuery.startsWith('#')) {
+        // Remove the # symbol and get the trope name
+        const tropeName = lowerQuery.substring(1);
+        
+        // Search for books that specifically match this trope
+        results = sampleBooks.filter(book => 
+          book.tropes.some(trope => 
+            trope.toLowerCase() === tropeName.toLowerCase() ||
+            trope.toLowerCase().includes(tropeName.toLowerCase())
+          )
+        );
+        
+        // If no exact trope matches, do a more general search
+        if (results.length === 0) {
+          const searchTerms = tropeName.replace(/[-_]/g, ' ');
+          results = sampleBooks.filter(book => 
+            book.title.toLowerCase().includes(searchTerms) || 
+            book.author.toLowerCase().includes(searchTerms) || 
+            book.description.toLowerCase().includes(searchTerms) ||
+            book.tags.some(tag => tag.toLowerCase().includes(searchTerms))
+          );
+        }
+      } else {
+        // Regular search (not a hashtag)
+        results = sampleBooks.filter(book => 
+          book.title.toLowerCase().includes(lowerQuery) || 
+          book.author.toLowerCase().includes(lowerQuery) || 
+          book.description.toLowerCase().includes(lowerQuery) ||
+          book.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
+          book.tropes.some(trope => trope.toLowerCase().includes(lowerQuery))
+        );
+      }
+      
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 500); // Simulate network delay
+  };
+
+  // Handle search input changes
+  const handleSearchChange = (text: string) => {
+    setSearchText(text);
+    performSearch(text);
+  };
 
   // Handle category selection
   const handleCategoryPress = (categoryId: string) => {
@@ -247,6 +553,38 @@ export default function BrowseScreen() {
     </Animated.View>
   );
 
+  // Render book item in search results
+  const renderBookItem = ({ item }: { item: Book }) => (
+    <TouchableOpacity 
+      style={styles.bookItem}
+      onPress={() => console.log(`Book selected: ${item.title}`)}
+      activeOpacity={0.7}
+    >
+      <Image 
+        source={{ uri: item.coverImage }}
+        style={styles.bookCover}
+        resizeMode="cover"
+      />
+      <View style={styles.bookInfo}>
+        <Text style={styles.bookTitle}>{item.title}</Text>
+        <Text style={styles.bookAuthor}>{item.author}</Text>
+        <Text style={styles.bookDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+        <View style={styles.bookTags}>
+          {item.tags.slice(0, 2).map((tag, index) => (
+            <View key={index} style={styles.bookTag}>
+              <Text style={styles.bookTagText}>{tag}</Text>
+            </View>
+          ))}
+          {item.tags.length > 2 && (
+            <Text style={styles.moreTags}>+{item.tags.length - 2} more</Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   if (!fontsLoaded) {
     return null;
   }
@@ -291,15 +629,55 @@ export default function BrowseScreen() {
                 placeholder="Search for stories and people"
                 placeholderTextColor="#999"
                 value={searchText}
-                onChangeText={setSearchText}
+                onChangeText={handleSearchChange}
               />
               {searchText.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchText('')}>
+                <TouchableOpacity onPress={() => {
+                  setSearchText('');
+                  setSearchResults([]);
+                }}>
                   <Ionicons name="close-circle" size={18} color="#888" />
                 </TouchableOpacity>
               )}
             </Animated.View>
           </View>
+
+          {/* Search Results */}
+          {searchText.length > 0 && (
+            <View style={styles.searchResultsContainer}>
+              {isSearching ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#4a4e82" />
+                </View>
+              ) : searchResults.length > 0 ? (
+                <View>
+                  <Text style={styles.searchResultsTitle}>
+                    {searchText.startsWith('#') ? 
+                      `Trope: "${searchText.substring(1)}" (${searchResults.length})` : 
+                      `Search Results (${searchResults.length})`
+                    }
+                  </Text>
+                  <FlatList
+                    data={searchResults}
+                    renderItem={renderBookItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.searchResultsList}
+                    scrollEnabled={false}
+                  />
+                </View>
+              ) : (
+                <View style={styles.noResultsContainer}>
+                  <Ionicons name="search-outline" size={50} color="#ddd" />
+                  <Text style={styles.noResultsText}>
+                    No results found for "{searchText}"
+                  </Text>
+                  <Text style={styles.noResultsSubText}>
+                    Try different keywords or check for typos
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {searchText.length === 0 && (
             <View>
@@ -352,42 +730,45 @@ export default function BrowseScreen() {
             </View>
           )}
 
-          <View style={styles.categoriesGrid}>
-            {categories.map((item, index) => (
-              <Animated.View
-                key={item.id}
-                style={[
-                  styles.categoryItemContainer,
-                  {
-                    opacity: staggerAnimations[index],
-                    transform: [
-                      { 
-                        translateY: staggerAnimations[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [30, 0],
-                        })
-                      }
-                    ]
-                  }
-                ]}
-              >
-                <TouchableOpacity
-                  style={styles.categoryItem}
-                  onPress={() => handleCategoryPress(item.id)}
-                  activeOpacity={0.7}
+          {/* Rest of the component with categories */}
+          {searchText.length === 0 && (
+            <View style={styles.categoriesGrid}>
+              {categories.map((item, index) => (
+                <Animated.View
+                  key={item.id}
+                  style={[
+                    styles.categoryItemContainer,
+                    {
+                      opacity: staggerAnimations[index],
+                      transform: [
+                        { 
+                          translateY: staggerAnimations[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [30, 0],
+                          })
+                        }
+                      ]
+                    }
+                  ]}
                 >
-                  <Image 
-                    source={{ uri: item.image }} 
-                    style={styles.categoryImage} 
-                    resizeMode="cover"
-                  />
-                  <View style={styles.categoryTitleContainer}>
-                    <Text style={styles.categoryTitle}>{item.title}</Text>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
-          </View>
+                  <TouchableOpacity
+                    style={styles.categoryItem}
+                    onPress={() => handleCategoryPress(item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Image 
+                      source={{ uri: item.image }} 
+                      style={styles.categoryImage} 
+                      resizeMode="cover"
+                    />
+                    <View style={styles.categoryTitleContainer}>
+                      <Text style={styles.categoryTitle}>{item.title}</Text>
+                    </View>
+                  </TouchableOpacity>
+                </Animated.View>
+              ))}
+            </View>
+          )}
         </ScrollView>
       </Animated.View>
       
@@ -412,7 +793,7 @@ export default function BrowseScreen() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.tabButton}
-          onPress={navigateToProfile}
+          onPress={() => router.replace('/profile')}
         >
           <Ionicons name="person-outline" size={24} color="#555" />
           <Text style={styles.tabButtonText}>Profile</Text>
@@ -632,4 +1013,110 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
-}); 
+  // New styles for search results
+  searchResultsContainer: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+  },
+  searchResultsTitle: {
+    fontFamily: 'SpaceMono',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  searchResultsList: {
+    paddingBottom: 20,
+  },
+  bookItem: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  bookCover: {
+    width: 90,
+    height: 130,
+    borderRadius: 5,
+  },
+  bookInfo: {
+    flex: 1,
+    marginLeft: 15,
+    justifyContent: 'space-between',
+  },
+  bookTitle: {
+    fontFamily: 'SpaceMono',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  bookAuthor: {
+    fontFamily: 'SpaceMono',
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 6,
+  },
+  bookDescription: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    color: '#777',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  bookTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  bookTag: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  bookTagText: {
+    fontFamily: 'SpaceMono',
+    fontSize: 10,
+    color: '#555',
+  },
+  moreTags: {
+    fontFamily: 'SpaceMono',
+    fontSize: 10,
+    color: '#888',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsText: {
+    fontFamily: 'SpaceMono',
+    fontSize: 16,
+    color: '#555',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  noResultsSubText: {
+    fontFamily: 'SpaceMono',
+    fontSize: 14,
+    color: '#888',
+    marginTop: 5,
+    textAlign: 'center',
+  },
+});

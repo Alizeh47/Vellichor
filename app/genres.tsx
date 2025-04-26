@@ -1,18 +1,113 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Image, ImageSourcePropType } from 'react-native';
 import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundImage from '../components/BackgroundImage';
 import Colors from '../constants/Colors';
 
 SplashScreen.preventAutoHideAsync();
 
+// Define a default book cover image to use for all books
+const DEFAULT_BOOK_COVER = require('../assets/images/splash-icon.png');
+
+// Create a mapping of book cover image names to their require statements
+const BOOK_COVERS = {
+  // Crime books
+  'crime_book1': require('../assets/images/book-covers/crime_book1.jpg'),
+  'crime_book2': require('../assets/images/book-covers/crime_book2.jpg'),
+  'crime_book3': require('../assets/images/book-covers/crime_book3.jpg'),
+  
+  // Sci-Fi books
+  'scifi_book1': require('../assets/images/book-covers/scifi_book1.jpg'),
+  'scifi_book2': require('../assets/images/book-covers/scifi_book2.jpg'),
+  'scifi_book3': require('../assets/images/book-covers/scifi_book3.jpg'),
+  
+  // Romance books
+  'romance_book1': require('../assets/images/book-covers/romance_book1.jpg'),
+  'romance_book2': require('../assets/images/book-covers/romance_book2.jpg'),
+  'romance_book3': require('../assets/images/book-covers/romance_book3.jpg'),
+  
+  // Other genre books
+  'contemporary_romance_book1': require('../assets/images/book-covers/contemporary_romance_book1.jpg'),
+  'contemporary_romance_book2': require('../assets/images/book-covers/contemporary_romance_book2.jpg'),
+  'contemporary_romance_book3': require('../assets/images/book-covers/contemporary_romance_book3.jpg'),
+  
+  'historical_romance_book1': require('../assets/images/book-covers/historical_romance_book1.jpg'),
+  'historical_romance_book2': require('../assets/images/book-covers/historical_romance_book2.jpg'),
+  'historical_romance_book3': require('../assets/images/book-covers/historical_romance_book3.jpg'),
+  
+  'paranormal_romance_book1': require('../assets/images/book-covers/paranormal_romance_book1.jpg'),
+  'paranormal_romance_book2': require('../assets/images/book-covers/paranormal_romance_book2.jpg'),
+  'paranormal_romance_book3': require('../assets/images/book-covers/paranormal_romance_book3.jpg'),
+  
+  'fantasy_book1': require('../assets/images/book-covers/fantasy_book1.jpg'),
+  'fantasy_book2': require('../assets/images/book-covers/fantasy_book2.jpg'),
+  'fantasy_book3': require('../assets/images/book-covers/fantasy_book3.jpg'),
+  
+  'history_book1': require('../assets/images/book-covers/history_book1.jpg'),
+  'history_book2': require('../assets/images/book-covers/history_book2.jpg'),
+  'history_book3': require('../assets/images/book-covers/history_book3.jpg'),
+  
+  'horror_book1': require('../assets/images/book-covers/horror_book1.jpg'),
+  'horror_book2': require('../assets/images/book-covers/horror_book2.jpg'),
+  'horror_book3': require('../assets/images/book-covers/horror_book3.jpg'),
+  
+  'biography_book1': require('../assets/images/book-covers/biography_book1.jpg'),
+  'biography_book2': require('../assets/images/book-covers/biography_book2.jpg'),
+  'biography_book3': require('../assets/images/book-covers/biography_book3.jpg'),
+  
+  'poetry_book1': require('../assets/images/book-covers/poetry_book1.jpg'),
+  'poetry_book2': require('../assets/images/book-covers/poetry_book2.jpg'),
+  'poetry_book3': require('../assets/images/book-covers/poetry_book3.jpg'),
+  
+  'superhero_comics_book1': require('../assets/images/book-covers/superhero_comics_book1.jpg'),
+  'superhero_comics_book2': require('../assets/images/book-covers/superhero_comics_book2.jpg'),
+  'superhero_comics_book3': require('../assets/images/book-covers/superhero_comics_book3.jpg'),
+  
+  'manga_book1': require('../assets/images/book-covers/manga_book1.jpg'),
+  'manga_book2': require('../assets/images/book-covers/manga_book2.jpg'),
+  'manga_book3': require('../assets/images/book-covers/manga_book3.jpg'),
+  
+  'graphic_novels_book1': require('../assets/images/book-covers/graphic_novels_book1.jpg'),
+  'graphic_novels_book2': require('../assets/images/book-covers/graphic_novels_book2.jpg'),
+  'graphic_novels_book3': require('../assets/images/book-covers/graphic_novels_book3.jpg'),
+  
+  'thriller_book1': require('../assets/images/book-covers/thriller_book1.jpg'),
+  'thriller_book3': require('../assets/images/book-covers/thriller_book3.jpg'),
+  
+  'mystery_book1': require('../assets/images/book-covers/mystery_book1.jpg'),
+  'mystery_book2': require('../assets/images/book-covers/mystery_book2.jpg'),
+  'mystery_book3': require('../assets/images/book-covers/mystery_book3.jpg'),
+  
+  'adventure_book2': require('../assets/images/book-covers/adventure_book2.jpg'),
+  'adventure_book3': require('../assets/images/book-covers/adventure_book3.jpg'),
+  
+  'short_story_book1': require('../assets/images/book-covers/short_story_book1.jpg'),
+  'short_story_book2': require('../assets/images/book-covers/short_story_book2.jpg'),
+  'short_story_book3': require('../assets/images/book-covers/short_story_book3.jpg'),
+  
+  'werewolf_book1': require('../assets/images/book-covers/werewolf_book1.jpg'),
+  'werewolf_book2': require('../assets/images/book-covers/werewolf_book2.jpg'),
+  'werewolf_book3': require('../assets/images/book-covers/werewolf_book3.jpg'),
+  
+  'non_fiction_book1': require('../assets/images/book-covers/non_fiction_book1.jpg'),
+  'non_fiction_book2': require('../assets/images/book-covers/non_fiction_book2.jpg'),
+  'non_fiction_book3': require('../assets/images/book-covers/non_fiction_book3.jpg'),
+};
+
+// Helper function to get book cover image based on the coverImage string
+const getBookCoverImage = (coverImageName: string) => {
+  // @ts-ignore - Ignore TS error about indexing with string
+  return BOOK_COVERS[coverImageName] || DEFAULT_BOOK_COVER;
+};
+
 interface BookCard {
   title: string;
   author: string;
-  color: string;
+  coverImage: string; // This will just be a placeholder now
 }
 
 interface Genre {
@@ -37,17 +132,17 @@ export default function GenresScreen() {
         {
           title: 'The Ghost',
           author: 'Richard Marsh',
-          color: '#5C3D2F',
+          coverImage: 'crime_book1',
         },
         {
           title: 'Unseen Shadow',
           author: 'Terry Doyle',
-          color: '#25323A',
+          coverImage: 'crime_book2',
         },
         {
           title: 'Dark Path',
           author: 'Kris Stone',
-          color: '#623D33',
+          coverImage: 'crime_book3',
         },
       ],
     },
@@ -59,17 +154,17 @@ export default function GenresScreen() {
         {
           title: 'The Star Voyager',
           author: 'Ellie Chen',
-          color: '#896E51',
+          coverImage: 'scifi_book1',
         },
         {
           title: 'Beyond Time',
           author: 'Marcus Wells',
-          color: '#B8A174',
+          coverImage: 'scifi_book2',
         },
         {
           title: 'The Last Colony',
           author: 'Sam Yeung',
-          color: '#916F5E',
+          coverImage: 'scifi_book3',
         },
       ],
     },
@@ -81,17 +176,17 @@ export default function GenresScreen() {
         {
           title: 'Autumn Hearts',
           author: 'Jessica Park',
-          color: '#C78E65',
+          coverImage: 'romance_book1',
         },
         {
           title: 'Whispered Promises',
           author: 'Connor Reed',
-          color: '#E0AC80',
+          coverImage: 'romance_book2',
         },
         {
           title: 'Summer Encounter',
           author: 'Lily Saunders',
-          color: '#B39285',
+          coverImage: 'romance_book3',
         },
       ],
     },
@@ -103,17 +198,17 @@ export default function GenresScreen() {
         {
           title: 'City Love',
           author: 'Nina Roberts',
-          color: '#917E78',
+          coverImage: 'contemporary_romance_book1',
         },
         {
           title: 'Coffee Shop Meet',
           author: 'Thomas Green',
-          color: '#948370',
+          coverImage: 'contemporary_romance_book2',
         },
         {
           title: 'Modern Hearts',
           author: 'Rachel Simmons',
-          color: '#916F5E',
+          coverImage: 'contemporary_romance_book3',
         },
       ],
     },
@@ -125,17 +220,17 @@ export default function GenresScreen() {
         {
           title: 'Duke\'s Promise',
           author: 'Elizabeth Ward',
-          color: '#5C3D2F',
+          coverImage: 'historical_romance_book1',
         },
         {
           title: 'Victorian Passion',
           author: 'Charlotte Reed',
-          color: '#623D33',
+          coverImage: 'historical_romance_book2',
         },
         {
           title: 'Regency Hearts',
           author: 'Jane Miller',
-          color: '#25323A',
+          coverImage: 'historical_romance_book3',
         },
       ],
     },
@@ -147,17 +242,17 @@ export default function GenresScreen() {
         {
           title: 'Vampire\'s Kiss',
           author: 'Amelia Night',
-          color: '#896E51',
+          coverImage: 'paranormal_romance_book1',
         },
         {
           title: 'Wolf\'s Mate',
           author: 'Lucas Storm',
-          color: '#B8A174',
+          coverImage: 'paranormal_romance_book2',
         },
         {
           title: 'Enchanted Love',
           author: 'Crystal Moon',
-          color: '#916F5E',
+          coverImage: 'paranormal_romance_book3',
         },
       ],
     },
@@ -169,17 +264,17 @@ export default function GenresScreen() {
         {
           title: 'Dragon\'s Realm',
           author: 'Morgan Faye',
-          color: '#C78E65',
+          coverImage: 'fantasy_book1',
         },
         {
           title: 'The Wizard\'s Path',
           author: 'Trevor Hill',
-          color: '#E0AC80',
+          coverImage: 'fantasy_book2',
         },
         {
           title: 'Ancient Magic',
           author: 'Kira Stone',
-          color: '#B39285',
+          coverImage: 'fantasy_book3',
         },
       ],
     },
@@ -191,17 +286,17 @@ export default function GenresScreen() {
         {
           title: 'The Forgotten Time',
           author: 'Emma Clarke',
-          color: '#917E78',
+          coverImage: 'history_book1',
         },
         {
           title: 'Royal Secrets',
           author: 'James Thornton',
-          color: '#948370',
+          coverImage: 'history_book2',
         },
         {
           title: 'The Last Dynasty',
           author: 'Victoria Wu',
-          color: '#623D33',
+          coverImage: 'history_book3',
         },
       ],
     },
@@ -213,17 +308,17 @@ export default function GenresScreen() {
         {
           title: 'Midnight Manor',
           author: 'Edgar Flynn',
-          color: '#25323A',
+          coverImage: 'horror_book1',
         },
         {
           title: 'The Haunting',
           author: 'Sarah Black',
-          color: '#5C3D2F',
+          coverImage: 'horror_book2',
         },
         {
           title: 'Whispers in Darkness',
           author: 'H.P. Williams',
-          color: '#623D33',
+          coverImage: 'horror_book3',
         },
       ],
     },
@@ -235,17 +330,17 @@ export default function GenresScreen() {
         {
           title: 'Hidden Genius',
           author: 'Laura Miller',
-          color: '#896E51',
+          coverImage: 'biography_book1',
         },
         {
           title: 'Journey to Greatness',
           author: 'Michael Roberts',
-          color: '#B8A174',
+          coverImage: 'biography_book2',
         },
         {
           title: 'The Unknown Hero',
           author: 'Patricia Lane',
-          color: '#916F5E',
+          coverImage: 'biography_book3',
         },
       ],
     },
@@ -257,17 +352,17 @@ export default function GenresScreen() {
         {
           title: 'Whispers of the Soul',
           author: 'Emily Rivers',
-          color: '#C78E65',
+          coverImage: 'poetry_book1',
         },
         {
           title: 'Midnight Thoughts',
           author: 'David Frost',
-          color: '#E0AC80',
+          coverImage: 'poetry_book2',
         },
         {
           title: 'Silent Echoes',
           author: 'Sophia Lee',
-          color: '#B39285',
+          coverImage: 'poetry_book3',
         },
       ],
     },
@@ -279,17 +374,17 @@ export default function GenresScreen() {
         {
           title: 'Captain Thunder',
           author: 'Mark Wilson',
-          color: '#917E78',
+          coverImage: 'superhero_comics_book1',
         },
         {
           title: 'The Night Defender',
           author: 'Chris Taylor',
-          color: '#5C3D2F',
+          coverImage: 'superhero_comics_book2',
         },
         {
           title: 'Hero Alliance',
           author: 'Jessica Moore',
-          color: '#25323A',
+          coverImage: 'superhero_comics_book3',
         },
       ],
     },
@@ -301,17 +396,17 @@ export default function GenresScreen() {
         {
           title: 'Sword of Destiny',
           author: 'Hiro Tanaka',
-          color: '#B8A174',
+          coverImage: 'manga_book1',
         },
         {
           title: 'Academy Heroes',
           author: 'Yuki Sato',
-          color: '#896E51',
+          coverImage: 'manga_book2',
         },
         {
           title: 'Spirit Warriors',
           author: 'Kenji Watanabe',
-          color: '#623D33',
+          coverImage: 'manga_book3',
         },
       ],
     },
@@ -323,17 +418,17 @@ export default function GenresScreen() {
         {
           title: 'The Dark Path',
           author: 'Alan Moore',
-          color: '#C78E65',
+          coverImage: 'graphic_novels_book1',
         },
         {
           title: 'Forgotten City',
           author: 'Neil Gaiman',
-          color: '#E0AC80',
+          coverImage: 'graphic_novels_book2',
         },
         {
           title: 'Life in Frames',
           author: 'Alison Bechdel',
-          color: '#B39285',
+          coverImage: 'graphic_novels_book3',
         },
       ],
     },
@@ -345,17 +440,17 @@ export default function GenresScreen() {
         {
           title: 'Silent Witness',
           author: 'Robert Blake',
-          color: '#917E78',
+          coverImage: 'thriller_book1',
         },
         {
           title: 'The Last Deception',
           author: 'Lauren Chase',
-          color: '#948370',
+          coverImage: 'thriller_book2',
         },
         {
           title: 'Deadline',
           author: 'Michael Torres',
-          color: '#25323A',
+          coverImage: 'thriller_book3',
         },
       ],
     },
@@ -367,17 +462,17 @@ export default function GenresScreen() {
         {
           title: 'The Hidden Clue',
           author: 'Agatha Wilson',
-          color: '#5C3D2F',
+          coverImage: 'mystery_book1',
         },
         {
           title: 'Private Detective',
           author: 'Raymond Wells',
-          color: '#623D33',
+          coverImage: 'mystery_book2',
         },
         {
           title: 'The Disappeared',
           author: 'Emma Christie',
-          color: '#916F5E',
+          coverImage: 'mystery_book3',
         },
       ],
     },
@@ -389,17 +484,17 @@ export default function GenresScreen() {
         {
           title: 'Lost Treasure',
           author: 'Jack Hunter',
-          color: '#B8A174',
+          coverImage: 'adventure_book1',
         },
         {
           title: 'Mountain Expedition',
           author: 'Sierra Everest',
-          color: '#896E51',
+          coverImage: 'adventure_book2',
         },
         {
           title: 'The Explorer\'s Map',
           author: 'Oliver Trek',
-          color: '#C78E65',
+          coverImage: 'adventure_book3',
         },
       ],
     },
@@ -411,17 +506,17 @@ export default function GenresScreen() {
         {
           title: 'Brief Encounters',
           author: 'Various Authors',
-          color: '#E0AC80',
+          coverImage: 'short_story_book1',
         },
         {
           title: 'Moments in Time',
           author: 'Lisa Johnson',
-          color: '#B39285',
+          coverImage: 'short_story_book2',
         },
         {
           title: 'Fifteen Tales',
           author: 'Colin Parker',
-          color: '#917E78',
+          coverImage: 'short_story_book3',
         },
       ],
     },
@@ -433,17 +528,17 @@ export default function GenresScreen() {
         {
           title: 'Full Moon Rising',
           author: 'Luna Wolfe',
-          color: '#5C3D2F',
+          coverImage: 'werewolf_book1',
         },
         {
           title: 'Pack Alpha',
           author: 'Hunter Gray',
-          color: '#623D33',
+          coverImage: 'werewolf_book2',
         },
         {
           title: 'The Wolf Within',
           author: 'Diana Moon',
-          color: '#25323A',
+          coverImage: 'werewolf_book3',
         },
       ],
     },
@@ -455,17 +550,17 @@ export default function GenresScreen() {
         {
           title: 'The Science of Everything',
           author: 'Dr. Alan Taylor',
-          color: '#896E51',
+          coverImage: 'non_fiction_book1',
         },
         {
           title: 'Modern Philosophy',
           author: 'Prof. Sarah Jenkins',
-          color: '#B8A174',
+          coverImage: 'non_fiction_book2',
         },
         {
           title: 'World History Explained',
           author: 'Historian Press',
-          color: '#916F5E',
+          coverImage: 'non_fiction_book3',
         },
       ],
     },
@@ -488,9 +583,23 @@ export default function GenresScreen() {
     );
   };
 
-  const handleContinue = () => {
-    // Save selected genres and navigate to tropes page
-    router.push('/tropes');
+  const handleContinue = async () => {
+    try {
+      // Get the selected genres
+      const selectedGenres = genres
+        .filter(genre => genre.selected)
+        .map(genre => genre.id);
+      
+      // Save selected genres to AsyncStorage
+      await AsyncStorage.setItem('selectedGenres', JSON.stringify(selectedGenres));
+      
+      // Navigate to tropes page
+      router.push('/tropes');
+    } catch (error) {
+      console.error('Failed to save genres:', error);
+      // Navigate anyway even if storage fails
+      router.push('/tropes');
+    }
   };
 
   const handleSkip = () => {
@@ -531,15 +640,19 @@ export default function GenresScreen() {
           <Text style={styles.heading}>Pick your favorites</Text>
           
           {genres.map((genre) => (
-            <View key={genre.id} style={styles.genreCard}>
+            <TouchableOpacity 
+              key={genre.id} 
+              style={styles.genreCard}
+              onPress={() => toggleGenre(genre.id)}
+              activeOpacity={0.8}
+            >
               <View style={styles.genreHeader}>
                 <Text style={styles.genreName}>{genre.name}</Text>
-                <TouchableOpacity 
+                <View 
                   style={[styles.checkBox, genre.selected ? styles.checkBoxSelected : {}]} 
-                  onPress={() => toggleGenre(genre.id)}
                 >
                   {genre.selected && <Ionicons name="checkmark" size={20} color="#fff" />}
-                </TouchableOpacity>
+                </View>
               </View>
               
               <View style={styles.bookCovers}>
@@ -551,16 +664,22 @@ export default function GenresScreen() {
                       { 
                         zIndex: genre.sampleBooks.length - index,
                         left: index * 20,
-                        backgroundColor: book.color
                       }
                     ]}
                   >
-                    <Text style={styles.bookTitle}>{book.title}</Text>
-                    <Text style={styles.bookAuthor}>by {book.author}</Text>
+                    <Image 
+                      source={getBookCoverImage(book.coverImage)}
+                      style={styles.coverImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.bookInfo}>
+                      <Text style={styles.bookTitle}>{book.title}</Text>
+                      <Text style={styles.bookAuthor}>by {book.author}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
@@ -613,17 +732,17 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginBottom: 24,
   },
-  appTitle: {
-    fontFamily: 'SpaceMono',
-    fontSize: 24,
-    color: Colors.primary,
-    marginBottom: 40,
-  },
   genreCard: {
     backgroundColor: 'rgba(255, 243, 214, 0.6)',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    transform: [{ scale: 1 }],
   },
   genreHeader: {
     flexDirection: 'row',
@@ -659,7 +778,6 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 10,
     position: 'absolute',
-    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -667,28 +785,30 @@ const styles = StyleSheet.create({
     elevation: 5,
     overflow: 'hidden',
   },
-  bookTitle: {
+  coverImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  bookInfo: {
     position: 'absolute',
-    bottom: 30,
-    left: 10,
-    right: 10,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  bookTitle: {
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.7)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   bookAuthor: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-    right: 10,
     color: 'white',
     fontSize: 10,
-    textShadowColor: 'rgba(0, 0, 0, 0.7)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    marginTop: 2,
   },
   buttonContainer: {
     position: 'absolute',

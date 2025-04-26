@@ -14,6 +14,7 @@ import { useFonts } from 'expo-font';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundImage from '../components/BackgroundImage';
 import Colors from '../constants/Colors';
 
@@ -68,6 +69,18 @@ const FunTag = ({ text, color, icon }: FunTagProps) => {
     ]).start();
   }, []);
 
+  const handleTagPress = async () => {
+    try {
+      // Save the tag text as the search query
+      await AsyncStorage.setItem('search_query', text);
+      // Navigate to browse screen
+      router.push('/browse');
+    } catch (error) {
+      console.error('Failed to save search query:', error);
+      router.push('/browse');
+    }
+  };
+
   return (
     <Animated.View 
       style={[
@@ -75,8 +88,10 @@ const FunTag = ({ text, color, icon }: FunTagProps) => {
         { backgroundColor: color, transform: [{ translateY }], opacity }
       ]}
     >
-      {icon && <FontAwesome5 name={icon} size={14} color="#fff" style={styles.tagIcon} />}
-      <Text style={styles.funTagText}>{text}</Text>
+      <TouchableOpacity onPress={handleTagPress} style={styles.tagTouchable}>
+        {icon && <FontAwesome5 name={icon} size={12} color="#fff" style={styles.tagIcon} />}
+        <Text style={styles.funTagText}>{text}</Text>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
@@ -103,16 +118,30 @@ const TropeCard = ({ title, description, color, delay = 0 }: TropeCardProps) => 
     ]).start();
   }, []);
 
+  const handleTropePress = async () => {
+    try {
+      // Save the trope title as a hashtag search query
+      await AsyncStorage.setItem('search_query', `#${title}`);
+      // Navigate to browse screen
+      router.push('/browse');
+    } catch (error) {
+      console.error('Failed to save search query:', error);
+      router.push('/browse');
+    }
+  };
+
   return (
-    <Animated.View 
-      style={[
-        styles.tropeCard, 
-        { backgroundColor: color, transform: [{ scale }], opacity }
-      ]}
-    >
-      <Text style={styles.tropeTitle}>{title}</Text>
-      <Text style={styles.tropeDescription}>{description}</Text>
-    </Animated.View>
+    <TouchableOpacity onPress={handleTropePress} activeOpacity={0.8}>
+      <Animated.View 
+        style={[
+          styles.tropeCard, 
+          { backgroundColor: color, transform: [{ scale }], opacity }
+        ]}
+      >
+        <Text style={styles.tropeTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+        <Text style={styles.tropeDescription} numberOfLines={3} ellipsizeMode="tail">{description}</Text>
+      </Animated.View>
+    </TouchableOpacity>
   );
 };
 
@@ -643,7 +672,23 @@ export default function TropesScreen() {
           <Text style={styles.footerText}>Find your next favorite story</Text>
           <TouchableOpacity 
             style={styles.continueButton}
-            onPress={() => router.push('/about')}
+            onPress={async () => {
+              // Check if user has chosen to skip about page
+              try {
+                const skipAboutPage = await AsyncStorage.getItem('skip_about_page');
+                if (skipAboutPage === 'true') {
+                  // If user chose to always skip, go directly to reading
+                  router.push('/reading');
+                } else {
+                  // Otherwise show the about page
+                  router.push('/about');
+                }
+              } catch (error) {
+                console.error('Failed to check preference:', error);
+                // Default to about page if there's an error
+                router.push('/about');
+              }
+            }}
           >
             <Text style={styles.buttonText}>Discover the Vellichor Experience</Text>
           </TouchableOpacity>
@@ -665,7 +710,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 10,
     zIndex: 10,
@@ -692,7 +737,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: 90,
+    marginTop: 70,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -703,22 +748,24 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 30,
+    marginBottom: 25,
+    marginTop: 20,
   },
   titleText: {
     fontFamily: 'SpaceMono',
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#5C3D2F',
     textAlign: 'center',
+    lineHeight: 30,
   },
   vellichorText: {
     fontFamily: 'Birthstone',
-    fontSize: 62,
+    fontSize: 55,
     fontStyle: 'italic',
     textAlign: 'center',
     color: '#5C3D2F',
+    lineHeight: 55,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -727,10 +774,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   funTag: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    margin: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    margin: 4,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
@@ -739,12 +786,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  tagTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
   tagIcon: {
-    marginRight: 6,
+    marginRight: 4,
   },
   funTagText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
   },
   sectionHeader: {
@@ -775,6 +827,7 @@ const styles = StyleSheet.create({
   },
   tropeCard: {
     width: 250,
+    height: 150,
     padding: 20,
     borderRadius: 15,
     marginRight: 15,
@@ -783,6 +836,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
+    justifyContent: 'space-between',
   },
   tropeTitle: {
     fontFamily: 'SpaceMono',
@@ -796,6 +850,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#fff',
     opacity: 0.9,
+    flexShrink: 1,
+    flexGrow: 0,
+    flexBasis: 'auto',
   },
   footer: {
     alignItems: 'center',
@@ -810,9 +867,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   continueButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 30,
-    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -823,7 +880,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontFamily: 'SpaceMono',
     fontWeight: '600',
   },
