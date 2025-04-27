@@ -965,7 +965,17 @@ export default function ReadingScreen() {
     } else {
       // Add to wishlist
       const newWishlist = [...wishlist, book.id];
-      const newWishlistedBooks = [...wishlistedBooks, book];
+      
+      // Format book for wishlist
+      const wishlistBook = {
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        coverImage: book.coverImage,
+        description: book.description
+      };
+      
+      const newWishlistedBooks = [...wishlistedBooks, wishlistBook];
       
       setWishlist(newWishlist);
       setWishlistedBooks(newWishlistedBooks);
