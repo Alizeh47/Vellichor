@@ -898,7 +898,8 @@ export default function ReadingScreen() {
         bookTitle: 'Hunting Sweetie Rose',
         bookAuthor: 'Jack Fredrickson',
         currentPage: 235,
-        totalPages: 345
+        totalPages: 345,
+        timestamp: Date.now().toString()
       }
     });
   };
@@ -926,7 +927,8 @@ export default function ReadingScreen() {
           bookTitle: book.title,
           bookAuthor: book.author,
           currentPage: 1,
-          totalPages: 345 // This would be dynamic in a real app
+          totalPages: 345, // This would be dynamic in a real app
+          timestamp: Date.now().toString()
         }
       });
     });
@@ -1718,7 +1720,8 @@ export default function ReadingScreen() {
                           bookTitle: book.title,
                           bookAuthor: book.author,
                           currentPage: 1,
-                          totalPages: 345 // This would be dynamic in a real app
+                          totalPages: 345, // This would be dynamic in a real app
+                          timestamp: Date.now().toString()
                         }
                       });
                       toggleSearch();

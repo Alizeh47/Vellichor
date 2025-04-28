@@ -303,7 +303,8 @@ export default function LibraryScreen() {
         bookTitle: book.title,
         bookAuthor: book.author,
         currentPage: book.currentPage.toString(),
-        totalPages: book.totalPages.toString()
+        totalPages: book.totalPages.toString(),
+        timestamp: Date.now().toString()
       }
     });
   }, []);
@@ -838,6 +839,9 @@ export default function LibraryScreen() {
           { opacity: fadeAnim }
         ]}
       >
+        {/* Library Title */}
+        <Text style={styles.libraryTitle}>vellichor library</Text>
+        
         {/* Tabs */}
         <Animated.View
           style={[
@@ -1461,6 +1465,15 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  libraryTitle: {
+    fontFamily: 'Birthstone',
+    fontSize: 44,
+    color: '#322822',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: 50,
+    marginBottom: 10,
+  },
   tabsContainer: {
     flexDirection: 'row',
     position: 'relative',
@@ -1470,6 +1483,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    paddingTop: 15,
   },
   tab: {
     flex: 1,

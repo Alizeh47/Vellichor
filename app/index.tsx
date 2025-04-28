@@ -66,10 +66,12 @@ export default function WelcomeScreen() {
           ]}
         >
           {/* Main content */}
-          <Text style={styles.title}>
-            All your books in one place on{' '}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>
+              All your books in one place on
+            </Text>
             <Text style={styles.vellichorText}>Vellichor.</Text>
-          </Text>
+          </View>
 
           <TouchableOpacity 
             style={styles.startButton}
@@ -108,35 +110,31 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+    width: '100%',
+  },
   title: {
-    fontSize: 49,
+    fontSize: 44,
     fontFamily: 'SpaceMono',
     color: '#0D1D3C',
-    marginBottom: 40,
-    lineHeight: 52,
-    width: '100%',
+    lineHeight: 48,
     textAlign: 'center',
     textShadowColor: 'rgba(255, 255, 255, 0.7)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    marginBottom: 10,
   },
   vellichorText: {
     fontFamily: 'Birthstone',
-    fontSize: 92,
+    fontSize: 82,
     fontStyle: 'italic',
     color: '#0D1D3C',
     textShadowColor: 'rgba(255, 255, 255, 0.7)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
-  },
-  highlightedText: {
-    fontWeight: 'bold',
-    fontStyle: 'italic',
-    fontSize: 54, // Slightly larger
-    color: '#0D1D3C',
-    textShadowColor: 'rgba(255, 255, 255, 0.7)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    lineHeight: 75,
   },
   startButton: {
     backgroundColor: Colors.primary,

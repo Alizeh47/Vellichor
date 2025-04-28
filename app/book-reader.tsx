@@ -14,7 +14,8 @@ import {
   Image,
   ToastAndroid,
   Platform,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -22,7 +23,11 @@ import { Ionicons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-SplashScreen.preventAutoHideAsync();
+// Keep this at the top level
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // If this fails, it's usually because the splash screen is already hidden
+  console.log('SplashScreen.preventAutoHideAsync failed');
+});
 
 const { width, height } = Dimensions.get('window');
 
@@ -103,17 +108,23 @@ const getBookCoverByTitle = (title: string) => {
 };
 
 export default function BookReader() {
-  const [fontsLoaded] = useFonts({
+  const [isReady, setIsReady] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
     'Merriweather': require('../assets/fonts/Merriweather-Regular.ttf'),
   });
   
   // Get parameters from route
   const params = useLocalSearchParams();
-  const bookTitle = params.bookTitle as string || 'Unknown Book';
-  const bookAuthor = params.bookAuthor as string || 'Unknown Author';
+  console.log('BookReader params received:', params);
+  
+  const bookTitle = decodeURIComponent(params.bookTitle as string || 'Unknown Book');
+  const bookAuthor = decodeURIComponent(params.bookAuthor as string || 'Unknown Author');
   const currentPage = parseInt(params.currentPage as string || '1', 10);
   const totalPages = parseInt(params.totalPages as string || '100', 10);
+  const timestamp = params.timestamp; // Just capturing the timestamp to force refresh
+  
+  console.log('Processed book params:', { bookTitle, bookAuthor, currentPage, totalPages });
   
   // Create book data from parameters
   const [book, setBook] = useState({
@@ -137,10 +148,54 @@ export default function BookReader() {
   const [showBookmarkToast, setShowBookmarkToast] = useState(false);
   const [bookmarkToastMessage, setBookmarkToastMessage] = useState('');
 
-  // Check if book is already bookmarked on load
+  // Enhanced effect to properly handle fonts loading and initialization
   useEffect(() => {
-    checkIfBookmarked();
-  }, []);
+    async function prepare() {
+      try {
+        console.log('BookReader prepare: starting initialization');
+        
+        // Check if book is already bookmarked
+        try {
+          await checkIfBookmarked();
+          console.log('BookReader prepare: checkIfBookmarked completed');
+        } catch (bookmarkError) {
+          console.error('BookReader prepare: Error checking bookmarks, but continuing:', bookmarkError);
+          // Continue anyway
+        }
+        
+        // Always set as ready even if there are errors above
+        console.log('BookReader prepare: Setting isReady = true');
+        setIsReady(true);
+        
+        // Hide splash screen once fonts are loaded
+        if (fontsLoaded) {
+          try {
+            console.log('BookReader prepare: Fonts loaded, hiding splash screen');
+            await SplashScreen.hideAsync();
+          } catch (splashError) {
+            console.error('BookReader prepare: Error hiding splash screen:', splashError);
+            // Continue anyway
+          }
+        } else {
+          console.log('BookReader prepare: Fonts not loaded yet, will try later');
+        }
+      } catch (error) {
+        console.error('BookReader prepare: Critical error during initialization:', error);
+        // Force isReady to true even if there was an error
+        setIsReady(true);
+      }
+    }
+    
+    prepare();
+    
+    // Force isReady to true after 5 seconds as a fallback
+    const timeout = setTimeout(() => {
+      console.log('BookReader prepare: Timeout reached, forcing isReady = true');
+      setIsReady(true);
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
+  }, [fontsLoaded]);
 
   const checkIfBookmarked = async () => {
     try {
@@ -278,21 +333,54 @@ export default function BookReader() {
     }, 1000);
   };
 
-  // Hide splash screen when fonts are loaded
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-  
-  if (!fontsLoaded) {
-    return null;
+  // If not ready, show loading state
+  if (!isReady) {
+    console.log('BookReader render: Showing loading indicator (isReady=false)');
+    return (
+      <SafeAreaView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#6E6BA8" />
+        <Text style={{marginTop: 20, fontFamily: Platform.OS === 'ios' ? 'System' : 'normal', fontSize: 16}}>
+          Loading book...
+        </Text>
+      </SafeAreaView>
+    );
   }
 
+  // Log fonts loaded status
+  console.log('BookReader render: Fonts loaded:', fontsLoaded);
+
+  // If there was an error loading fonts, continue anyway with system fonts
+  if (fontError) {
+    console.log('BookReader render: Font error detected:', fontError);
+  }
+
+  // Safety check for required data
+  if (!book || !book.chapters || book.chapters.length === 0) {
+    console.log('BookReader render: Book data missing, showing error');
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.content, {justifyContent: 'center', alignItems: 'center'}]}>
+          <Ionicons name="alert-circle-outline" size={50} color="#999" />
+          <Text style={[{marginTop: 20, marginBottom: 20, fontSize: 24, fontWeight: 'bold', color: '#38384E', textAlign: 'center'}]}>
+            Book data could not be loaded
+          </Text>
+          <TouchableOpacity 
+            style={[styles.headerButton, {backgroundColor: '#6E6BA8', padding: 15, width: 'auto'}]}
+            onPress={() => router.replace('/reading')}
+          >
+            <Text style={{color: '#FFFFFF', fontWeight: 'bold'}}>
+              Go back to Reading
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  console.log('BookReader render: Rendering main book content');
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <Stack.Screen options={{ title: "", headerShown: false }} />
       
       <View style={styles.content}>
         <View style={styles.header}>
@@ -300,14 +388,14 @@ export default function BookReader() {
             style={styles.headerButton}
             onPress={handleBack}
           >
-            <Ionicons name="chevron-back" size={24} color="#4a4e82" />
+            <Ionicons name="chevron-back" size={28} color="#4a4e82" />
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.headerButton}
             onPress={handleRateBook}
           >
-            <Ionicons name="star-outline" size={22} color="#4a4e82" />
+            <Ionicons name="star-outline" size={26} color="#4a4e82" />
           </TouchableOpacity>
           
           <View style={styles.spacer} />
@@ -316,7 +404,7 @@ export default function BookReader() {
             style={styles.headerButton}
             onPress={toggleControls}
           >
-            <Ionicons name="menu" size={22} color="#4a4e82" />
+            <Ionicons name="menu" size={26} color="#4a4e82" />
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -325,7 +413,7 @@ export default function BookReader() {
           >
             <Ionicons 
               name={isBookmarked ? "bookmark" : "bookmark-outline"} 
-              size={22} 
+              size={26} 
               color="#4a4e82" 
             />
           </TouchableOpacity>
@@ -336,11 +424,19 @@ export default function BookReader() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.bookTitleContainer}>
-            <Text style={styles.bookTitleText}>{book.title}</Text>
-            <Text style={styles.bookAuthorText}>by {book.author}</Text>
+            <Text style={[styles.bookTitleText, !fontsLoaded && {fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif'}]}>
+              {book.title}
+            </Text>
+            <Text style={[styles.bookAuthorText, !fontsLoaded && {fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif'}]}>
+              by {book.author}
+            </Text>
           </View>
           
-          <Text style={[styles.bookText, { fontSize: fontSize }]}>
+          <Text style={[
+            styles.bookText, 
+            { fontSize: fontSize },
+            !fontsLoaded && {fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif'}
+          ]}>
             {book.chapters[currentChapter].content}
           </Text>
           <View style={styles.endPadding} />
@@ -593,20 +689,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E0D5',
+    marginTop: 15,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     backgroundColor: '#F4F1E4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 6,
   },
   spacer: {
     flex: 1,
@@ -614,7 +711,7 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 30,
   },
   bookText: {
     fontFamily: 'Merriweather',
@@ -698,20 +795,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   bookTitleContainer: {
-    marginBottom: 20,
+    marginBottom: 30,
+    marginTop: 10,
   },
   bookTitleText: {
     fontFamily: 'Merriweather',
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#38384E',
     textAlign: 'center',
   },
   bookAuthorText: {
     fontFamily: 'SpaceMono',
-    fontSize: 16,
+    fontSize: 18,
     color: '#888',
     textAlign: 'center',
+    marginTop: 5,
   },
   tabBar: {
     flexDirection: 'row',
@@ -943,5 +1042,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'SpaceMono',
     fontSize: 14,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

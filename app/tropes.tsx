@@ -26,6 +26,7 @@ interface FunTagProps {
   text: string;
   color: string;
   icon: string;
+  isSmaller?: boolean;
 }
 
 interface TropeCardProps {
@@ -48,7 +49,7 @@ interface TagItem {
 }
 
 // Fun tag component
-const FunTag = ({ text, color, icon }: FunTagProps) => {
+const FunTag = ({ text, color, icon, isSmaller }: FunTagProps) => {
   const translateY = useRef(new Animated.Value(20)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -85,7 +86,8 @@ const FunTag = ({ text, color, icon }: FunTagProps) => {
     <Animated.View 
       style={[
         styles.funTag, 
-        { backgroundColor: color, transform: [{ translateY }], opacity }
+        { backgroundColor: color, transform: [{ translateY }], opacity },
+        isSmaller && { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 15 }
       ]}
     >
       <TouchableOpacity onPress={handleTagPress} style={styles.tagTouchable}>
@@ -153,6 +155,30 @@ export default function TropesScreen() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Custom tag renderer component for special sizing
+  const renderTag = (tag: TagItem, index: number) => {
+    // Define specific tags that should be smaller
+    const smallerTags = [
+      'Soft Magic & Sharp Morals',
+      'Armor On, Emotions Off',
+      'Books That Breathe With You',
+      'Tea-Warmed Soul Reads'
+    ];
+    
+    // Check if this tag should be smaller
+    const isSmaller = smallerTags.includes(tag.text);
+    
+    return (
+      <FunTag 
+        key={index} 
+        text={tag.text} 
+        color={tag.color} 
+        icon={tag.icon}
+        isSmaller={isSmaller}
+      />
+    );
+  };
 
   // Fun tags with icons and colors
   const funTags: TagItem[] = [
@@ -568,22 +594,13 @@ export default function TropesScreen() {
       >
         <View style={styles.section}>
           <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>
-              Discover Tropes with{' '}
-              <Text style={styles.vellichorText}>Vellichor</Text>
-            </Text>
+            <Text style={styles.titleText}>Discover Tropes with</Text>
+            <Text style={styles.vellichorText}>Vellichor</Text>
           </View>
           
           {/* Fun tags */}
           <View style={styles.tagsContainer}>
-            {funTags.map((tag, index) => (
-              <FunTag 
-                key={index} 
-                text={tag.text} 
-                color={tag.color} 
-                icon={tag.icon}
-              />
-            ))}
+            {funTags.map((tag, index) => renderTag(tag, index))}
           </View>
         </View>
         
@@ -741,6 +758,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+    paddingTop: 26,
   },
   section: {
     marginBottom: 30,
@@ -750,54 +768,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 25,
     marginTop: 20,
+    width: '100%',
+    paddingHorizontal: 10,
   },
   titleText: {
     fontFamily: 'SpaceMono',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#5C3D2F',
     textAlign: 'center',
-    lineHeight: 30,
+    lineHeight: 28,
   },
   vellichorText: {
     fontFamily: 'Birthstone',
-    fontSize: 55,
+    fontSize: 48,
     fontStyle: 'italic',
     textAlign: 'center',
     color: '#5C3D2F',
     lineHeight: 55,
+    marginTop: 5,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginVertical: 15,
+    paddingHorizontal: 5,
+    width: '100%',
   },
   funTag: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     margin: 4,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
+    flexShrink: 1,
+    flexGrow: 0,
+    alignSelf: 'flex-start',
   },
   tagTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
+    flexShrink: 1,
   },
   tagIcon: {
-    marginRight: 4,
+    marginRight: 5,
+    flexShrink: 0,
   },
   funTagText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
+    flexShrink: 1,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -675,6 +675,7 @@ export default function BrowseScreen() {
         bookAuthor: book.author,
         currentPage: Math.floor(Math.random() * 100) + 1, // Random current page (1-100)
         totalPages: Math.floor(Math.random() * 300) + 150, // Random total pages (150-450)
+        timestamp: Date.now().toString()
       }
     });
   };
@@ -1082,7 +1083,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 12,
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 8,
     justifyContent: 'center',
@@ -1126,6 +1127,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 80,
+    paddingTop: 10,
   },
   sectionTitle: {
     fontFamily: 'SpaceMono',
