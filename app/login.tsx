@@ -8,25 +8,64 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Animated
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { AntDesign } from '@expo/vector-icons';
 import BackgroundImage from '../components/BackgroundImage';
 import Colors from '../constants/Colors';
+import { supabase } from '../lib/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [fontsLoaded] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  const handleLogin = () => {
-    // Here you would add authentication logic
-    console.log('Login with:', email, password);
-    router.push('/(tabs)');
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Verify if profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        // Create profile if it doesn't exist
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              email: data.user.email,
+              full_name: data.user.user_metadata?.full_name || '',
+            },
+          ]);
+
+        if (createProfileError) {
+          console.error('Create profile error:', createProfileError);
+        }
+      }
+
+      router.push('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'An error occurred during login');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -70,6 +109,7 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!loading}
             />
             
             <Text style={styles.label}>Password</Text>
@@ -79,6 +119,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              editable={!loading}
             />
             
             <TouchableOpacity>
@@ -86,10 +127,13 @@ export default function LoginScreen() {
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={styles.loginButton}
+              style={[styles.loginButton, loading && styles.disabledButton]}
               onPress={handleLogin}
+              disabled={loading}
             >
-              <Text style={styles.loginButtonText}>Log In</Text>
+              <Text style={styles.loginButtonText}>
+                {loading ? 'Logging in...' : 'Log In'}
+              </Text>
             </TouchableOpacity>
             
             <View style={styles.signupContainer}>
@@ -209,5 +253,8 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(255, 255, 255, 0.5)',
     textShadowOffset: { width: 0.5, height: 0.5 },
     textShadowRadius: 1,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 }); 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -8,30 +8,139 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { AntDesign } from '@expo/vector-icons';
 import BackgroundImage from '../components/BackgroundImage';
 import Colors from '../constants/Colors';
+import { supabase } from '../lib/supabase';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [fontsLoaded] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  const handleSignup = () => {
-    // Here you would add sign up logic
-    console.log('Sign up with:', name, email, password);
-    router.push('/(tabs)');
+  const handleSignup = async () => {
+    try {
+      setLoading(true);
+      
+      // Validate input fields
+      if (!name.trim() || !email.trim() || !password.trim()) {
+        throw new Error('Please fill in all fields');
+      }
+
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+
+      // First, sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (signUpError) {
+        console.error('Signup error:', signUpError);
+        throw signUpError;
+      }
+
+      if (!authData.user) {
+        throw new Error('No user data returned from signup');
+      }
+
+      console.log('Auth data:', authData);
+
+      // Create profile in the profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: authData.user.id,
+            full_name: name,
+            email: email,
+            username: email.split('@')[0],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        throw profileError;
+      }
+
+      console.log('Profile created:', profileData);
+
+      // Clear all form data
+      const clearForm = () => {
+        setName('');
+        setEmail('');
+        setPassword('');
+        // Reset any other form states if needed
+      };
+
+      // Show success message with animation
+      Alert.alert(
+        'Account Created Successfully! 🎉',
+        'Please check your email for the confirmation link. You can now log in with your credentials.',
+        [
+          {
+            text: 'Go to Login',
+            onPress: () => {
+              clearForm(); // Clear form before navigation
+              router.push('/login');
+            },
+            style: 'default',
+          }
+        ]
+      );
+
+      // Clear form immediately after success
+      clearForm();
+
+    } catch (error: any) {
+      console.error('Signup process error:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'An error occurred during signup. Please try again.',
+        [
+          {
+            text: 'OK',
+            style: 'cancel',
+          }
+        ]
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
     router.back();
   };
+
+  // Add useEffect to clear form when component unmounts
+  useEffect(() => {
+    return () => {
+      setName('');
+      setEmail('');
+      setPassword('');
+    };
+  }, []);
 
   if (!fontsLoaded) {
     return null;
@@ -69,6 +178,7 @@ export default function SignupScreen() {
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
+              editable={!loading}
             />
             
             <Text style={styles.label}>Email</Text>
@@ -79,6 +189,7 @@ export default function SignupScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!loading}
             />
             
             <Text style={styles.label}>Password</Text>
@@ -88,6 +199,7 @@ export default function SignupScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              editable={!loading}
             />
             
             <Text style={styles.termsText}>
@@ -95,10 +207,13 @@ export default function SignupScreen() {
             </Text>
             
             <TouchableOpacity
-              style={styles.signupButton}
+              style={[styles.signupButton, loading && styles.disabledButton]}
               onPress={handleSignup}
+              disabled={loading}
             >
-              <Text style={styles.signupButtonText}>Create Account</Text>
+              <Text style={styles.signupButtonText}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Text>
             </TouchableOpacity>
             
             <View style={styles.loginContainer}>
@@ -219,5 +334,8 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(255, 255, 255, 0.5)',
     textShadowOffset: { width: 0.5, height: 0.5 },
     textShadowRadius: 1,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 }); 

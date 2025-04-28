@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image, Animated, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -56,10 +56,6 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <BackgroundImage />
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollViewContainer}
-        showsVerticalScrollIndicator={false}
-      >
         <Animated.View 
           style={[
             styles.contentContainer,
@@ -90,7 +86,6 @@ export default function WelcomeScreen() {
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </ScrollView>
     </View>
   );
 }
@@ -101,22 +96,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     position: 'relative',
   },
-  scrollViewContainer: {
-    flexGrow: 1,
-  },
   contentContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 30,
-    paddingVertical: 50,
     zIndex: 1,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   title: {
     fontSize: 49,
     fontFamily: 'SpaceMono',
     color: '#0D1D3C',
-    marginBottom: 100,
+    marginBottom: 40,
     lineHeight: 52,
     width: '100%',
     textAlign: 'center',
